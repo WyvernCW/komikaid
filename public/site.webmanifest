@@ -1,0 +1,21 @@
+{
+  "name": "KomikaID",
+  "short_name": "KomikaID",
+  "description": "Baca komik Indonesia cepat, nyaman, dan offline.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#101210",
+  "theme_color": "#101210",
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
