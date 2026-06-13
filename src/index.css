@@ -66,11 +66,11 @@ img { display: block; max-width: 100%; }
 .comic-copy h3 { margin: 10px 0 7px; font-family: Syne, sans-serif; font-size: 15px; line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .comic-title-link { display: block; }
 .comic-title-link:active { color: var(--accent); }
-.comic-releases { margin: 8px 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
-.comic-releases > span { min-height: 34px; padding: 0 7px; display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 10px; }
+.comic-releases { margin: 8px 0; background: var(--surface); border: 1px solid var(--line); }
+.comic-releases > span { min-height: 42px; padding: 8px; display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 11px; line-height: 1.3; }
 .comic-releases > span + span { border-top: 1px solid var(--line); }
-.comic-releases strong { min-width: 0; overflow: hidden; color: var(--text); text-overflow: ellipsis; white-space: nowrap; }
-.comic-releases em { flex: 0 0 auto; color: var(--accent); font-style: normal; font-weight: 800; text-align: right; }
+.comic-releases strong { min-width: 0; overflow: hidden; color: var(--text); font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
+.comic-releases em { flex: 0 0 auto; max-width: 48%; color: var(--accent); font-style: normal; font-weight: 800; text-align: right; white-space: nowrap; }
 .reading-progress { display: block; margin: -1px 0 7px; overflow: hidden; color: var(--accent); font-size: 11px; line-height: 1.4; text-overflow: ellipsis; white-space: nowrap; }
 .comic-meta { display: flex; gap: 12px; color: var(--muted); font-size: 12px; }
 .comic-meta span { display: inline-flex; align-items: center; gap: 4px; }
@@ -146,17 +146,18 @@ img { display: block; max-width: 100%; }
 .chapter-search { min-height: 56px; margin: 8px 0 24px; padding: 0 16px; display: flex; align-items: center; gap: 12px; background: var(--surface); border: 1px solid var(--line); color: var(--muted); }
 .chapter-search input { width: 100%; height: 54px; border: 0; outline: 0; background: transparent; color: var(--text); font-size: 16px; }
 .chapter-feedback { min-height: 56px; margin: 0; display: flex; align-items: center; color: var(--muted); }
-.chapter-list { display: grid; }
-.chapter-row { display: grid; grid-template-columns: minmax(0, 1fr) 56px; align-items: stretch; min-height: 80px; border-bottom: 1px solid var(--line); }
-.chapter-link { min-width: 0; display: grid; grid-template-columns: 56px minmax(0, 1fr) 24px; align-items: center; gap: 14px; padding: 12px 8px 12px 0; transition: background-color 160ms var(--ease); }
-.chapter-number { width: 56px; height: 56px; display: flex; flex-direction: column; align-items: center; justify-content: center; background: var(--surface); border: 1px solid var(--line); color: var(--text); font-family: Syne, sans-serif; font-weight: 800; line-height: 1; }
+.chapter-list { display: grid; gap: 8px; }
+.chapter-row { display: grid; grid-template-columns: minmax(0, 1fr) 56px; align-items: stretch; min-height: 88px; background: var(--surface); border: 1px solid var(--line); }
+.chapter-link { min-width: 0; display: grid; grid-template-columns: 64px minmax(0, 1fr) 20px; align-items: center; gap: 16px; padding: 12px 8px 12px 12px; transition: background-color 160ms var(--ease); }
+.chapter-number { width: 64px; height: 64px; display: flex; flex-direction: column; align-items: center; justify-content: center; background: var(--surface-2); border: 1px solid var(--line); color: var(--text); font-family: Syne, sans-serif; font-size: 20px; font-weight: 800; line-height: 1; }
 .chapter-number small { margin-bottom: 4px; color: var(--accent); font-family: 'DM Sans', sans-serif; font-size: 9px; letter-spacing: .12em; }
-.chapter-copy { min-width: 0; display: flex; flex-direction: column; gap: 6px; }
-.chapter-copy strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 15px; }
-.chapter-copy > small { display: flex; align-items: center; gap: 4px; color: var(--muted); font-size: 12px; }
+.chapter-copy { min-width: 0; display: flex; flex-direction: column; gap: 8px; }
+.chapter-copy strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 16px; line-height: 1.3; }
+.chapter-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; color: var(--muted); font-size: 12px; line-height: 1.35; }
+.chapter-meta > span { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
 .chapter-copy em { margin-left: 6px; padding: 3px 6px; color: #f5df87; background: #302b16; border: 1px solid #5c5738; font-size: 9px; font-style: normal; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
 .chapter-chevron { color: #717871; }
-.chapter-download { width: 48px; min-height: 48px; align-self: center; border: 0; background: transparent; color: var(--muted); transition: color 160ms var(--ease), transform 160ms var(--ease); }
+.chapter-download { width: 48px; min-height: 48px; align-self: center; justify-self: center; border: 0; background: transparent; color: var(--muted); transition: color 160ms var(--ease), transform 160ms var(--ease); }
 .chapter-download:active { color: var(--accent); transform: scale(.92); }
 .chapter-load-more { width: 100%; min-height: 52px; margin-top: 16px; border: 1px solid var(--line); background: var(--surface); color: var(--text); font-weight: 700; }
 

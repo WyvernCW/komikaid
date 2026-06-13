@@ -17,6 +17,13 @@ it('formats chapter age with hours and minutes', () => {
   )).toBe('23 jam 01 menit')
 })
 
+it('formats chapter age with days and remaining hours after 24 hours', () => {
+  expect(formatChapterTimestamp(
+    '2026-06-12T14:00:00Z',
+    Date.parse('2026-06-14T09:36:00Z'),
+  )).toBe('1 hari 19 jam')
+})
+
 const chapter = (number: number, title = ''): Chapter => ({
   id: `${String(number).padStart(8, '0')}-0000-4000-8000-000000000000`,
   comicId: '2555b94b-b381-41ac-973f-2c76132fe924',

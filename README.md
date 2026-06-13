@@ -1,76 +1,136 @@
-# KomikaID
+<div align="center">
+  <img src="./public/icons/icon-192.png" width="112" alt="KomikaID logo">
 
-KomikaID is an Indonesian comics reader built for fast, uninterrupted reading
-across the web and Android. It combines a responsive editorial interface with
-offline downloads, reading progress, personal collections, and release
-notifications.
+  # KomikaID
 
-## Reading Experience
+  **An Indonesian comic reader built for fast, uninterrupted reading.**
 
-- Browse daily comic updates and search the catalog by title or genre.
-- Read chapters in a distraction-free vertical reader.
-- Jump directly to any chapter with searchable chapter navigation.
+  Web and Android support, offline chapters, reading progress, personal
+  collections, authentication, and release notifications in one dark
+  editorial experience.
+
+  [![React](https://img.shields.io/badge/React-19-20232a?logo=react&logoColor=61dafb)](https://react.dev/)
+  [![TypeScript](https://img.shields.io/badge/TypeScript-6-3178c6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+  [![Capacitor](https://img.shields.io/badge/Capacitor-8-119eff?logo=capacitor&logoColor=white)](https://capacitorjs.com/)
+  [![Android](https://img.shields.io/badge/Android-supported-3ddc84?logo=android&logoColor=white)](https://developer.android.com/)
+  [![License](https://img.shields.io/badge/license-MIT-f0c93d)](./LICENSE)
+</div>
+
+---
+
+## What Is KomikaID?
+
+KomikaID is a mobile-first Indonesian comic application for readers who want
+their library to remain useful even when the network does not. Catalog data,
+comic details, chapter progress, and downloaded pages are stored locally and
+shown immediately while fresh data loads quietly in the background.
+
+The interface puts comic artwork and reading first: compact navigation,
+searchable chapter lists, clear release information, and a distraction-free
+vertical reader.
+
+## Highlights
+
+### Discover
+
+- Browse daily releases and paginated comic catalogs.
+- Search by title and filter genres with include or exclude rules.
+- See the latest two chapters directly beneath each comic cover.
+- Open complete comic details, descriptions, tags, and searchable chapter lists.
+
+### Read
+
+- Smooth vertical chapter reader with page preloading.
+- Jump to any chapter from the reader without leaving the page.
 - Continue from the exact chapter and page previously viewed.
-- Keep reading during weak connections or completely offline.
-- Move naturally through reading history with browser and Android back
-  navigation.
+- Navigate naturally using browser history or Android back navigation.
+- Adjust reader brightness and move between adjacent chapters.
 
-## Personal Library
+### Keep It Offline
 
-- Comics enter the collection automatically after reading.
-- Favorites, reading history, and chapter progress remain available locally.
-- Signed-in readers can synchronize their library between devices.
-- Explicit chapter downloads are retained until the reader removes them.
-- Temporary image data uses bounded caching for consistently fast loading.
+- Download complete chapters for permanent offline reading.
+- Resume interrupted downloads without restarting completed pages.
+- Keep explicit downloads until they are manually removed.
+- Cache catalog, details, chapter lists, and images for low-connectivity use.
+- Use bounded temporary caching to keep storage and loading predictable.
 
-## Releases And Notifications
+### Personalize
 
-- Comic cards display the latest release time and highlight fresh updates.
-- Readers can follow individual comics for new-chapter notifications.
-- OneSignal provides Android push delivery and notification identity mapping.
-- Notification links open the relevant comic or chapter directly.
+- Automatically add read comics to the collection.
+- Track favorites, history, chapter progress, and download status.
+- Use KomikaID without an account, then merge local history after signing in.
+- Synchronize signed-in collection data across supported devices.
 
-## Offline First
+### Stay Updated
 
-KomikaID treats local data as a first-class source rather than a fallback.
-Cached catalog pages, comic details, chapter lists, progress, and downloaded
-pages render immediately while online updates happen in the background.
-Interrupted downloads can resume without discarding completed pages.
+- Follow individual comics for release notifications.
+- Receive Android push notifications through OneSignal and Firebase.
+- Open notification links directly to the relevant comic or chapter.
+- Review recent releases in the in-app notification inbox.
 
-## Interface
+## Design
 
-The interface uses a dark editorial visual system designed around comic cover
-art. Navigation is optimized for mobile touch targets, reader controls remain
-out of the artwork's way, and motion is limited to short transform and opacity
-transitions with reduced-motion support.
+KomikaID uses a dark editorial system built around charcoal surfaces, warm
+off-white typography, and a controlled yellow accent. The interface is
+mobile-first, uses accessible touch targets, supports reduced motion, and
+keeps navigation available without covering reading content.
+
+## Architecture
+
+```text
+React application
+    |
+    +-- TanStack Query       Remote data and cache lifecycle
+    +-- Zustand              Transient interface state
+    +-- IndexedDB / SQLite   Library, history, progress, and metadata
+    +-- Capacitor Filesystem Downloaded chapter pages
+    |
+KomikaID API
+    |
+    +-- Runtime validation
+    +-- Request timeout and bounded retry
+    +-- Stale-cache fallback
+    +-- Rate limiting
+    +-- Restricted image proxy and caching
+    |
+Shinigami content provider
+```
+
+The client talks only to KomikaID's normalized API routes. Upstream behavior
+is isolated behind a provider adapter so response validation, caching,
+security restrictions, and future provider changes do not leak into the
+interface.
 
 ## Technology
 
-- React, TypeScript, Vite, and React Router
-- Capacitor for Android and iOS projects
-- Clerk authentication with Google sign-in
-- OneSignal and Firebase Cloud Messaging for Android notifications
-- SQLite, IndexedDB, and Capacitor Filesystem for offline storage
-- TanStack Query and Zustand for remote and interface state
-- Express, Zod, and a first-party Shinigami provider adapter
-- Vitest and Playwright for automated verification
-
-## API Architecture
-
-KomikaID exposes its own normalized API routes instead of coupling the client
-to an upstream implementation. The provider layer validates Shinigami
-responses, applies bounded retries and caching, and restricts external image
-requests through explicit host and content checks.
+| Area | Technology |
+| --- | --- |
+| Interface | React, TypeScript, Vite, React Router |
+| Mobile | Capacitor, Android, iOS project |
+| Data | TanStack Query, Zustand, Zod |
+| Offline storage | SQLite, IndexedDB, Capacitor Filesystem |
+| Authentication | Clerk |
+| Notifications | OneSignal, Firebase Cloud Messaging |
+| Backend | Express, first-party provider adapter |
+| Verification | Vitest, Playwright, ESLint |
 
 ## Platforms
 
-- Progressive web application
-- Android application package
-- Capacitor iOS project for compatibility and future distribution
+| Platform | Status |
+| --- | --- |
+| Web / PWA | Supported |
+| Android | Supported |
+| iOS | Capacitor project available; final signing requires macOS |
 
-## Status
+## Project Status
 
-KomikaID currently includes catalog browsing, search and genre filters, comic
-details, complete chapter navigation, reading progress, collections,
-downloads, offline startup, account synchronization, Google authentication,
-and Android push notification integration.
+KomikaID includes catalog browsing, genre filtering, comic details, complete
+chapter navigation, offline downloads, reading restoration, collections,
+account synchronization, authentication, and Android notification support.
+
+---
+
+<div align="center">
+  Built for readers who should not have to choose between speed, reliability,
+  and a clean reading experience.
+</div>

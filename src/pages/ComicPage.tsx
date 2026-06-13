@@ -140,14 +140,12 @@ export function ComicPage() {
                 <span className="chapter-number"><small>CH</small>{chapter.number}</span>
                 <span className="chapter-copy">
                   <strong>{chapter.title || `Chapter ${chapter.number}`}</strong>
-                  <small>
-                    {new Date(chapter.releaseDate).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
-                    <span aria-hidden="true"> · </span>
-                    {formatChapterTimestamp(chapter.releaseDate)}
-                    <span aria-hidden="true"> · </span>
-                    <Eye size={13} aria-hidden="true" /> {new Intl.NumberFormat('id-ID', { notation: 'compact' }).format(chapter.views)}
+                  <span className="chapter-meta">
+                    <span>{new Date(chapter.releaseDate).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+                    <span>{formatChapterTimestamp(chapter.releaseDate)}</span>
+                    <span><Eye size={13} aria-hidden="true" /> {new Intl.NumberFormat('id-ID', { notation: 'compact' }).format(chapter.views)}</span>
                     {chapter.id === availableChapters[0]?.id && <em>Terbaru</em>}
-                  </small>
+                  </span>
                 </span>
                 <ChevronRight className="chapter-chevron" size={20} aria-hidden="true" />
               </Link>

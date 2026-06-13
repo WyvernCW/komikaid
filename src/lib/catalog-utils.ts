@@ -89,11 +89,15 @@ export function formatUpdateAge(timestamp: string | null, now = Date.now()): Upd
 
 export function formatChapterTimestamp(timestamp: string, now = Date.now()) {
   const releasedAt = Date.parse(timestamp)
-  if (!Number.isFinite(releasedAt)) return '-- jam -- menit'
+  if (!Number.isFinite(releasedAt)) return '--'
   const elapsedMinutes = Math.floor(Math.max(0, now - releasedAt) / 60_000)
   const hours = Math.floor(elapsedMinutes / 60)
   const minutes = elapsedMinutes % 60
   if (hours === 0) return `${minutes} menit`
+  if (hours >= 24) {
+    const days = Math.floor(hours / 24)
+    return `${days} hari ${hours % 24} jam`
+  }
   return `${hours} jam ${String(minutes).padStart(2, '0')} menit`
 }
 
