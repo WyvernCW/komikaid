@@ -9,6 +9,7 @@ import {
 } from 'react'
 import { Link, useParams, useSearchParams } from 'react-router-dom'
 import { api } from '../lib/api'
+import { downloadManager } from '../lib/download-manager'
 import { filterChapters } from '../lib/catalog-utils'
 import {
   areReaderControlsVisible,
@@ -25,7 +26,18 @@ export function ReaderPage() {
   const comicId = search.get('comic') ?? ''
   const brightness = useUiStore((state) => state.brightness)
   const setBrightness = useUiStore((state) => state.setBrightness)
-  const chapter = useQuery({ queryKey: ['chapter', chapterId], queryFn: () => api.chapter(chapterId) })
+  const chapter = useQuery({
+    queryKey: ['chapter', chapterId],
+    queryFn: async () => {
+      try {
+        return await api.chapter(chapterId)
+      } catch (error) {
+        const offline = await downloadManager.getOfflineChapter(chapterId)
+        if (offline) return offline
+        throw error
+      }
+    },
+  })
   const comic = useQuery({
     queryKey: ['comic', comicId],
     queryFn: () => api.comic(comicId),

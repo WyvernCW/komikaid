@@ -86,6 +86,13 @@ export type DownloadRecord = {
   status: 'queued' | 'downloading' | 'paused' | 'complete' | 'failed'
   completedPages: number
   totalPages: number
+  pageUrls?: string[]
+  localPaths?: string[]
+  previousChapterId?: string | null
+  nextChapterId?: string | null
+  downloadedBytes?: number
+  retryCount?: number
+  verification?: 'pending' | 'verified' | 'partial'
   error?: string
   updatedAt: number
 }

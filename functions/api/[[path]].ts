@@ -1,3 +1,5 @@
+import { createApiIndex, createOpenApiDocument } from '../../shared/api-document'
+
 interface PagesContext {
   request: Request
   waitUntil(promise: Promise<unknown>): void
@@ -9,9 +11,20 @@ const APP_ORIGINS = new Set(['https://komikaid.pages.dev', 'https://app.komikaid
 const MAX_IMAGE_BYTES = 25 * 1024 * 1024
 
 function withCors(response: Response, request: Request): Response {
+  const requestUrl = new URL(request.url)
+  const requestedMethod = request.method === 'OPTIONS'
+    ? request.headers.get('access-control-request-method')?.toUpperCase()
+    : request.method
+  const isPublicRead = requestedMethod === 'GET'
+    && !requestUrl.pathname.startsWith('/api/sync')
+    && !requestUrl.pathname.startsWith('/api/auth/')
   const origin = request.headers.get('origin')
-  if (!origin || !APP_ORIGINS.has(origin)) return response
   const result = new Response(response.body, response)
+  if (isPublicRead) {
+    result.headers.set('Access-Control-Allow-Origin', '*')
+    return result
+  }
+  if (!origin || !APP_ORIGINS.has(origin)) return response
   result.headers.set('Access-Control-Allow-Origin', origin)
   result.headers.set('Access-Control-Allow-Credentials', 'true')
   result.headers.append('Vary', 'Origin')
@@ -76,6 +89,16 @@ async function proxyImage(request: Request, waitUntil: PagesContext['waitUntil']
 
 export async function onRequest({ request, waitUntil }: PagesContext): Promise<Response> {
   const incomingUrl = new URL(request.url)
+  if (request.method === 'GET' && /^\/api\/?$/.test(incomingUrl.pathname)) {
+    return withCors(Response.json(createApiIndex(incomingUrl.origin), {
+      headers: { 'Cache-Control': 'public, max-age=300' },
+    }), request)
+  }
+  if (request.method === 'GET' && incomingUrl.pathname === '/api/openapi.json') {
+    return withCors(Response.json(createOpenApiDocument(incomingUrl.origin), {
+      headers: { 'Cache-Control': 'public, max-age=3600' },
+    }), request)
+  }
   if (request.method === 'OPTIONS') {
     return withCors(new Response(null, {
       status: 204,
@@ -112,6 +135,16 @@ export async function onRequest({ request, waitUntil }: PagesContext): Promise<R
     redirect: 'manual',
   }))
   if (!isPublicGet || !response.ok) return withCors(response, request)
+  if (response.headers.get('Cache-Control')?.includes('no-store')) {
+    return withCors(response, request)
+  }
+  if (incomingUrl.pathname === '/api/comics/chapters/latest') {
+    const payload = await response.clone().json() as Record<string, unknown>
+    const isPartial = Object.values(payload).some(
+      (chapters) => !Array.isArray(chapters) || chapters.length === 0,
+    )
+    if (isPartial) return withCors(response, request)
+  }
 
   const cachedResponse = new Response(response.body, response)
   cachedResponse.headers.set('Cache-Control', 'public, max-age=60, s-maxage=300, stale-while-revalidate=86400')

@@ -14,6 +14,22 @@ const provider: ComicProvider = {
 }
 
 describe('KomikaID API', () => {
+  it('publishes a discoverable public API index', async () => {
+    const response = await request(createApp(provider)).get('/api')
+    expect(response.status).toBe(200)
+    expect(response.body.name).toBe('KomikaID Public API')
+    expect(response.body.documentation).toMatch(/\/api\/openapi\.json$/)
+    expect(response.body.aiGuide).toMatch(/\/llms\.txt$/)
+    expect(response.body.endpoints.length).toBeGreaterThan(0)
+  })
+
+  it('publishes an OpenAPI contract', async () => {
+    const response = await request(createApp(provider)).get('/api/openapi.json')
+    expect(response.status).toBe(200)
+    expect(response.body.openapi).toBe('3.1.0')
+    expect(response.body.paths['/comics/{mangaId}/chapters']).toBeDefined()
+  })
+
   it('returns health status', async () => {
     const response = await request(createApp(provider)).get('/api/health')
     expect(response.status).toBe(200)
@@ -40,12 +56,28 @@ describe('KomikaID API', () => {
   })
 
   it('batches latest chapters without failing the entire catalog', async () => {
-    const comicId = '2555b94b-b381-41ac-973f-2c76132fe924'
+    const comicId = '3555b94b-b381-41ac-973f-2c76132fe924'
     const response = await request(createApp(provider))
       .get('/api/comics/chapters/latest')
       .query({ ids: comicId })
     expect(response.status).toBe(200)
     expect(response.body).toEqual({ [comicId]: [] })
+    expect(response.headers['cache-control']).toBe('public, max-age=300, stale-while-revalidate=1800')
+  })
+
+  it('does not cache a partial latest-chapter batch', async () => {
+    const failingProvider = {
+      ...provider,
+      async chapters() { throw new Error('temporary upstream failure') },
+    }
+    const comicId = '2555b94b-b381-41ac-973f-2c76132fe924'
+    const response = await request(createApp(failingProvider))
+      .get('/api/comics/chapters/latest')
+      .query({ ids: comicId })
+    expect(response.status).toBe(200)
+    expect(response.body).toEqual({ [comicId]: [] })
+    expect(response.headers['cache-control']).toBe('no-store')
+    expect(response.headers['x-komikaid-partial']).toBe('true')
   })
 
   it('reports unavailable account sync when Clerk is not fully configured', async () => {

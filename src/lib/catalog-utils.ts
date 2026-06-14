@@ -80,7 +80,7 @@ export function formatUpdateAge(timestamp: string | null, now = Date.now()): Upd
   if (hours < 1) return { label: 'Baru', isNew: true }
   if (hours < 24) return { label: `${hours} jam`, isNew: false }
 
-  const days = Math.floor(hours / 24)
+  const days = Math.ceil(elapsed / 86_400_000)
   if (days < 30) return { label: `${days} hari`, isNew: false }
   const months = Math.floor(days / 30)
   if (months < 12) return { label: `${months} bln`, isNew: false }
@@ -94,11 +94,15 @@ export function formatChapterTimestamp(timestamp: string, now = Date.now()) {
   const hours = Math.floor(elapsedMinutes / 60)
   const minutes = elapsedMinutes % 60
   if (hours === 0) return `${minutes} menit`
-  if (hours >= 24) {
-    const days = Math.floor(hours / 24)
-    return `${days} hari ${hours % 24} jam`
-  }
-  return `${hours} jam ${String(minutes).padStart(2, '0')} menit`
+  if (hours < 72) return `${hours} jam ${String(minutes).padStart(2, '0')} menit`
+
+  const days = Math.floor(hours / 24)
+  if (days < 28) return `${Math.floor(days / 7)} minggu ${days % 7} hari`
+
+  const months = Math.floor(days / 30)
+  if (months < 12) return `${months} bulan ${days % 30} hari`
+
+  return `${Math.floor(months / 12)} tahun ${months % 12} bulan`
 }
 
 export function buildPageItems(current: number, total: number) {

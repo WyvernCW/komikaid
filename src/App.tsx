@@ -1,10 +1,12 @@
 import { App as CapacitorApp } from '@capacitor/app'
 import { Network } from '@capacitor/network'
-import { lazy, Suspense, useEffect, useLayoutEffect } from 'react'
+import { lazy, Suspense, useEffect } from 'react'
 import { Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom'
 import { Shell } from './components/Shell'
+import { ScrollRestoration } from './components/ScrollRestoration'
 import { StartupSkeleton } from './components/States'
 import { initializeLibrary } from './lib/store'
+import { downloadManager } from './lib/download-manager'
 import { useUiStore } from './lib/ui-store'
 import { HomePage } from './pages/HomePage'
 
@@ -24,26 +26,10 @@ export default function App() {
   useEffect(() => {
     void initializeLibrary().catch((error) => {
       console.error('Local library initialization failed', error)
+    }).then(() => {
+      void downloadManager.initialize()
     })
 
-    const warmRoutes = () => Promise.all([
-      import('./pages/ComicPage'),
-      import('./pages/DownloadsPage'),
-      import('./pages/LibraryPage'),
-      import('./pages/ProfilePage'),
-      import('./pages/SearchPage'),
-    ])
-    const idleWindow = window as Window & {
-      requestIdleCallback?: (callback: () => void, options?: { timeout: number }) => number
-      cancelIdleCallback?: (id: number) => void
-    }
-    const id = idleWindow.requestIdleCallback
-      ? idleWindow.requestIdleCallback(() => { void warmRoutes() }, { timeout: 1_000 })
-      : window.setTimeout(() => { void warmRoutes() }, 250)
-    return () => {
-      if (idleWindow.cancelIdleCallback) idleWindow.cancelIdleCallback(id)
-      else window.clearTimeout(id)
-    }
   }, [])
 
   useEffect(() => {
@@ -77,18 +63,6 @@ export default function App() {
     }
   }, [navigate, setOnline])
 
-  useLayoutEffect(() => {
-    if (location.pathname === '/' || location.pathname.startsWith('/comic/')) {
-      window.scrollTo({ top: 0, left: 0, behavior: 'instant' })
-      const frame = window.requestAnimationFrame(() => window.scrollTo(0, 0))
-      const timer = window.setTimeout(() => window.scrollTo(0, 0), 80)
-      return () => {
-        window.cancelAnimationFrame(frame)
-        window.clearTimeout(timer)
-      }
-    }
-  }, [location.key, location.pathname])
-
   useEffect(() => {
     const backButton = CapacitorApp.addListener('backButton', ({ canGoBack }) => {
       if (canGoBack) {
@@ -105,7 +79,7 @@ export default function App() {
     return () => { void backButton.then((handle) => handle.remove()) }
   }, [location.pathname, location.search, navigate])
 
-  return <Suspense fallback={<StartupSkeleton />}><Routes>
+  return <Suspense fallback={<StartupSkeleton />}><ScrollRestoration /><Routes>
       <Route element={<Shell />}>
         <Route index element={<HomePage />} />
         <Route path="search" element={<SearchPage />} />

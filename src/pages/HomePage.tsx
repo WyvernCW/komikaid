@@ -1,7 +1,7 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { ArrowRight, Flame } from 'lucide-react'
-import { useEffect, useRef, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { useEffect, useRef } from 'react'
+import { Link, useSearchParams } from 'react-router-dom'
 import type { Comic } from '../../shared/contracts'
 import { ComicCard } from '../components/ComicCard'
 import { CatalogPagination } from '../components/CatalogPagination'
@@ -13,7 +13,9 @@ import { useUiStore } from '../lib/ui-store'
 export function HomePage() {
   const queryClient = useQueryClient()
   const online = useUiStore((state) => state.online)
-  const [page, setPage] = useState(1)
+  const [searchParams, setSearchParams] = useSearchParams()
+  const requestedPage = Number.parseInt(searchParams.get('page') ?? '1', 10)
+  const page = Number.isFinite(requestedPage) && requestedPage > 0 ? requestedPage : 1
   const catalogStart = useRef<HTMLElement>(null)
   const cachedQuery = useQuery({
     queryKey: ['cached-comics'],
@@ -61,7 +63,7 @@ export function HomePage() {
   }, [online, page, query.data?.meta.totalPages, queryClient])
 
   const cached = cachedQuery.data ?? []
-  const comics = query.data?.data ?? cached
+  const comics = query.data?.data ?? cached.slice(0, 20)
   const releases = useQuery({
     queryKey: ['latest-chapters', comics.map((comic) => comic.id).join(',')],
     queryFn: () => api.latestChapters(comics.map((comic) => comic.id)),
@@ -72,7 +74,7 @@ export function HomePage() {
   const totalPages = Math.max(1, query.data?.meta.totalPages ?? 1)
   const goToPage = (nextPage: number) => {
     if (nextPage < 1 || nextPage > totalPages || nextPage === page) return
-    setPage(nextPage)
+    setSearchParams(nextPage === 1 ? {} : { page: String(nextPage) })
     window.requestAnimationFrame(() => {
       window.setTimeout(() => catalogStart.current?.scrollIntoView({
         behavior: 'smooth',
@@ -95,7 +97,7 @@ export function HomePage() {
           <div className="hero-content">
             <span className="eyebrow"><Flame size={15} /> Pilihan hari ini</span>
             <h1>{featured.title}</h1>
-            <p>{featured.description.slice(0, 150)}{featured.description.length > 150 ? '...' : ''}</p>
+            <p>{featured.description.slice(0, 105)}{featured.description.length > 105 ? '...' : ''}</p>
             <Link
               to={`/comic/${featured.id}`}
               state={{ comic: featured }}

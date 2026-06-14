@@ -1,17 +1,19 @@
-import { Bell, BookOpen, Download, Home, Search, UserRound } from 'lucide-react'
+import { Bell, BookOpen, Download, Home, RefreshCw, Search, UserRound } from 'lucide-react'
 import { NavLink, Outlet } from 'react-router-dom'
 import { useUiStore } from '../lib/ui-store'
 
 const nav = [
-  { to: '/', label: 'Beranda', icon: Home },
-  { to: '/search', label: 'Cari', icon: Search },
-  { to: '/library', label: 'Koleksi', icon: BookOpen },
-  { to: '/downloads', label: 'Unduhan', icon: Download },
-  { to: '/profile', label: 'Profil', icon: UserRound },
+  { to: '/', label: 'Beranda', icon: Home, preload: () => Promise.resolve() },
+  { to: '/search', label: 'Cari', icon: Search, preload: () => import('../pages/SearchPage') },
+  { to: '/library', label: 'Koleksi', icon: BookOpen, preload: () => import('../pages/LibraryPage') },
+  { to: '/downloads', label: 'Unduhan', icon: Download, preload: () => import('../pages/DownloadsPage') },
+  { to: '/profile', label: 'Profil', icon: UserRound, preload: () => import('../pages/ProfilePage') },
 ]
 
 export function Shell() {
   const online = useUiStore((state) => state.online)
+  const update = useUiStore((state) => state.availableUpdate)
+  const setUpdateDialogOpen = useUiStore((state) => state.setUpdateDialogOpen)
   return (
     <div className="app-shell">
       <header className="topbar">
@@ -20,14 +22,32 @@ export function Shell() {
         </NavLink>
         <div className="topbar-actions">
           {!online && <span className="offline-chip">Offline</span>}
+          {update && (
+            <button
+              type="button"
+              className="icon-button update-reminder"
+              aria-label={`Pembaruan KomikaID versi ${update.version}`}
+              onClick={() => setUpdateDialogOpen(true)}
+            >
+              <RefreshCw size={19} />
+              <span />
+            </button>
+          )}
           <NavLink to="/inbox" className="icon-button" aria-label="Notifikasi"><Bell size={20} /></NavLink>
-          <NavLink to="/profile" className="avatar-fallback" aria-label="Profil"><UserRound size={19} /></NavLink>
         </div>
       </header>
       <main className="page"><Outlet /></main>
       <nav className="bottom-nav" aria-label="Navigasi utama">
-        {nav.map(({ to, label, icon: Icon }) => (
-          <NavLink key={to} to={to} end={to === '/'} className={({ isActive }) => isActive ? 'active' : ''}>
+        {nav.map(({ to, label, icon: Icon, preload }) => (
+          <NavLink
+            key={to}
+            to={to}
+            end={to === '/'}
+            className={({ isActive }) => isActive ? 'active' : ''}
+            onPointerEnter={() => { void preload() }}
+            onPointerDown={() => { void preload() }}
+            onFocus={() => { void preload() }}
+          >
             <Icon size={21} /><span>{label}</span>
           </NavLink>
         ))}

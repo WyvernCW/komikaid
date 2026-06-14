@@ -91,7 +91,10 @@ export function ComicPage() {
               </div>
             )}
           </div>
-          <p className="detail-description">{item.description || 'Belum ada sinopsis untuk komik ini.'}</p>
+          <section className="detail-description" aria-labelledby="comic-synopsis">
+            <h2 id="comic-synopsis">Sinopsis</h2>
+            <p>{item.description || 'Belum ada sinopsis untuk komik ini.'}</p>
+          </section>
           <div className="detail-actions">
             {readingTarget ? (
               <Link className="primary-action" to={`/reader/${readingTarget}?comic=${item.id}`}>

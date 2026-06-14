@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+Allow: /api
+Allow: /api/
+Allow: /llms.txt
+Allow: /llms-full.txt
+
+Sitemap: https://komikaid.pages.dev/llms.txt

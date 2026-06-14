@@ -41,7 +41,7 @@ const upstreamComic = z.object({
   description: z.string().nullish(),
   cover_image_url: z.string().url(),
   cover_portrait_url: z.union([z.string().url(), z.literal('')]).nullish(),
-  latest_chapter_id: uuidSchema.nullish(),
+  latest_chapter_id: z.string().nullish(),
   latest_chapter_number: z.coerce.number().nullish(),
   latest_chapter_time: z.string().nullish(),
   status: z.number().default(0),
@@ -139,6 +139,9 @@ export async function findEarliestChapter(
 }
 
 type CacheEntry = { timestamp: number; data: unknown; meta?: UpstreamMeta }
+const memoryCache = new Map<string, CacheEntry>()
+const inFlightRequests = new Map<string, Promise<{ data: unknown; meta: UpstreamMeta; stale: boolean }>>()
+const MAX_MEMORY_CACHE_ENTRIES = 300
 const cachePath = (key: string) =>
   path.join(CACHE_DIR, createHash('sha256').update(`v2:${key}`).digest('hex') + '.json')
 const sleep = (milliseconds: number) =>
@@ -152,7 +155,9 @@ const normalizeComic = (value: z.infer<typeof upstreamComic>): Comic =>
     description: value.description ?? '',
     coverUrl: value.cover_image_url,
     bannerUrl: value.cover_portrait_url || null,
-    latestChapterId: value.latest_chapter_id ?? null,
+    latestChapterId: uuidSchema.safeParse(value.latest_chapter_id).success
+      ? value.latest_chapter_id
+      : null,
     latestChapterNumber: value.latest_chapter_number ?? null,
     latestChapterTime: value.latest_chapter_time ?? null,
     status: value.status,
@@ -165,14 +170,29 @@ const normalizeComic = (value: z.infer<typeof upstreamComic>): Comic =>
   })
 
 async function readCache(key: string): Promise<CacheEntry | null> {
+  const memoryEntry = memoryCache.get(key)
+  if (memoryEntry) {
+    memoryCache.delete(key)
+    memoryCache.set(key, memoryEntry)
+    return memoryEntry
+  }
   try {
-    return JSON.parse(await readFile(cachePath(key), 'utf8')) as CacheEntry
+    const entry = JSON.parse(await readFile(cachePath(key), 'utf8')) as CacheEntry
+    memoryCache.set(key, entry)
+    return entry
   } catch {
     return null
   }
 }
 
 async function writeCache(key: string, data: unknown, meta: UpstreamMeta) {
+  memoryCache.delete(key)
+  memoryCache.set(key, { timestamp: Date.now(), data, meta })
+  while (memoryCache.size > MAX_MEMORY_CACHE_ENTRIES) {
+    const oldestKey = memoryCache.keys().next().value
+    if (!oldestKey) break
+    memoryCache.delete(oldestKey)
+  }
   await mkdir(CACHE_DIR, { recursive: true })
   await writeFile(cachePath(key), JSON.stringify({ timestamp: Date.now(), data, meta }), 'utf8')
 }
@@ -188,6 +208,22 @@ async function request(pathname: string, ttl: number): Promise<{ data: unknown; 
     return { data: cached.data, meta: cached.meta, stale: false }
   }
 
+  const existingRequest = inFlightRequests.get(url)
+  if (existingRequest) return existingRequest
+
+  const upstreamRequest = requestUpstream(url, cached)
+  inFlightRequests.set(url, upstreamRequest)
+  try {
+    return await upstreamRequest
+  } finally {
+    inFlightRequests.delete(url)
+  }
+}
+
+async function requestUpstream(
+  url: string,
+  cached: CacheEntry | null,
+): Promise<{ data: unknown; meta: UpstreamMeta; stale: boolean }> {
   let lastError: unknown
   for (let attempt = 0; attempt < 3; attempt += 1) {
     try {

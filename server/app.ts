@@ -12,6 +12,7 @@ import helmet from 'helmet'
 import { z } from 'zod'
 import { ShinigamiProvider, type ComicProvider } from './provider.js'
 import { getUserSync, mergeUserSync } from './sync-store.js'
+import { createApiIndex, createOpenApiDocument } from '../shared/api-document.js'
 
 const imageCache = process.env.VERCEL
   ? path.join(tmpdir(), 'komikaid-images')
@@ -25,10 +26,30 @@ const latestChapterCache = new Map<string, {
   expiresAt: number
   data: Awaited<ReturnType<ComicProvider['chapters']>>['data']
 }>()
+const githubReleaseSchema = z.object({
+  tag_name: z.string().min(1).max(80),
+  name: z.string().max(200).nullable(),
+  body: z.string().max(100_000).nullable(),
+  published_at: z.string().datetime(),
+  html_url: z.string().url(),
+  draft: z.boolean(),
+  prerelease: z.boolean(),
+  assets: z.array(z.object({
+    name: z.string().min(1).max(255),
+    browser_download_url: z.string().url(),
+    size: z.number().int().nonnegative().max(300 * 1024 * 1024),
+    content_type: z.string().max(100),
+  })).max(100),
+})
+let appUpdateCache: { expiresAt: number; data: unknown } | null = null
 
 const queryInt = (value: unknown, fallback: number, max: number) => {
   const parsed = Number(value)
   return Number.isInteger(parsed) && parsed > 0 ? Math.min(parsed, max) : fallback
+}
+
+const setCatalogCache = (res: Response, seconds = 300) => {
+  res.setHeader('Cache-Control', `public, max-age=60, s-maxage=${seconds}, stale-while-revalidate=1800`)
 }
 
 function apiError(error: unknown, req: Request, res: Response, next: NextFunction) {
@@ -68,7 +89,70 @@ export function createApp(provider: ComicProvider = new ShinigamiProvider()) {
   app.use(express.json({ limit: '256kb' }))
   app.use(rateLimit({ windowMs: 60_000, limit: 120, standardHeaders: 'draft-8', legacyHeaders: false }))
 
+  app.get('/api', (req, res) => {
+    res.json(createApiIndex(`${req.protocol}://${req.get('host')}`))
+  })
+  app.get('/api/openapi.json', (req, res) => {
+    res.json(createOpenApiDocument(`${req.protocol}://${req.get('host')}`))
+  })
   app.get('/api/health', (_req, res) => res.json({ ok: true, service: 'komikaid-api' }))
+
+  app.get('/api/app-update/latest', async (_req, res, next) => {
+    try {
+      if (appUpdateCache && appUpdateCache.expiresAt > Date.now()) {
+        res.setHeader('Cache-Control', 'public, max-age=60, s-maxage=300')
+        return res.json(appUpdateCache.data)
+      }
+      const response = await fetch('https://api.github.com/repos/WyvernCW/komikaid/releases/latest', {
+        headers: {
+          Accept: 'application/vnd.github+json',
+          'User-Agent': 'KomikaID-Updater',
+          ...(process.env.GITHUB_TOKEN ? { Authorization: `Bearer ${process.env.GITHUB_TOKEN}` } : {}),
+          'X-GitHub-Api-Version': '2022-11-28',
+        },
+        signal: AbortSignal.timeout(8_000),
+      })
+      if (!response.ok) {
+        throw Object.assign(new Error(`GitHub release API returned ${response.status}`), { status: 502 })
+      }
+      const release = githubReleaseSchema.parse(await response.json())
+      if (release.draft || release.prerelease) {
+        return res.status(404).json({ error: { code: 'NO_STABLE_RELEASE', message: 'No stable release found.' } })
+      }
+      const apk = release.assets.find((asset) => (
+        asset.name.toLowerCase() === 'komikaid.apk'
+        || (asset.name.toLowerCase().endsWith('.apk') && asset.content_type.includes('android'))
+      )) ?? release.assets.find((asset) => asset.name.toLowerCase().endsWith('.apk'))
+      if (!apk) {
+        return res.status(404).json({ error: { code: 'APK_NOT_FOUND', message: 'Release has no APK asset.' } })
+      }
+      const apkUrl = new URL(apk.browser_download_url)
+      if (apkUrl.protocol !== 'https:' || apkUrl.hostname !== 'github.com') {
+        throw Object.assign(new Error('Release APK URL is not trusted'), { status: 502 })
+      }
+      const rawChangelog = release.body || 'Pembaruan dan perbaikan terbaru untuk KomikaID.'
+      const markdownHeading = rawChangelog.lastIndexOf('# ')
+      const changelog = markdownHeading >= 0
+        ? rawChangelog.slice(markdownHeading).trim()
+        : rawChangelog.replace(/<[^>]+>/g, '').trim()
+      const data = {
+        version: release.tag_name.replace(/^v/i, ''),
+        tag: release.tag_name,
+        title: release.name || release.tag_name,
+        changelog,
+        publishedAt: release.published_at,
+        releaseUrl: release.html_url,
+        downloadUrl: apk.browser_download_url,
+        fileName: apk.name,
+        size: apk.size,
+      }
+      appUpdateCache = { expiresAt: Date.now() + 5 * 60_000, data }
+      res.setHeader('Cache-Control', 'public, max-age=60, s-maxage=300, stale-while-revalidate=900')
+      return res.json(data)
+    } catch (error) {
+      return next(error)
+    }
+  })
 
   app.post('/api/auth/google/native', async (req, res, next) => {
     try {
@@ -116,6 +200,7 @@ export function createApp(provider: ComicProvider = new ShinigamiProvider()) {
 
   app.get('/api/comics', async (req, res, next) => {
     try {
+      setCatalogCache(res)
       res.json(await provider.list({
         page: queryInt(req.query.page, 1, 500),
         pageSize: queryInt(req.query.pageSize, 20, 50),
@@ -126,6 +211,7 @@ export function createApp(provider: ComicProvider = new ShinigamiProvider()) {
 
   app.get('/api/comics/search', async (req, res, next) => {
     try {
+      setCatalogCache(res, 180)
       const query = z.string().trim().min(2).max(80).parse(req.query.q)
       res.json(await provider.list({
         page: queryInt(req.query.page, 1, 500),
@@ -137,6 +223,7 @@ export function createApp(provider: ComicProvider = new ShinigamiProvider()) {
 
   app.get('/api/comics/filter', async (req, res, next) => {
     try {
+      setCatalogCache(res, 180)
       const genreList = z.string().max(400).optional().transform((value) => (
         value?.split(',').map((genre) => genre.trim()).filter(Boolean) ?? []
       ))
@@ -145,13 +232,13 @@ export function createApp(provider: ComicProvider = new ShinigamiProvider()) {
       if (!includedGenres.length && !excludedGenres.length) {
         return res.json(await provider.list({
           page: queryInt(req.query.page, 1, 500),
-          pageSize: queryInt(req.query.pageSize, 24, 50),
+          pageSize: queryInt(req.query.pageSize, 20, 50),
           sort: 'latest',
         }))
       }
       return res.json(await provider.filteredList({
         page: queryInt(req.query.page, 1, 500),
-        pageSize: queryInt(req.query.pageSize, 24, 50),
+        pageSize: queryInt(req.query.pageSize, 20, 50),
         includedGenres,
         excludedGenres,
       }))
@@ -166,8 +253,9 @@ export function createApp(provider: ComicProvider = new ShinigamiProvider()) {
           : [],
       )
       const result: Record<string, Awaited<ReturnType<ComicProvider['chapters']>>['data']> = {}
-      for (let start = 0; start < ids.length; start += 8) {
-        const batch = ids.slice(start, start + 8)
+      let hasPartialFailure = false
+      for (let start = 0; start < ids.length; start += 10) {
+        const batch = ids.slice(start, start + 10)
         const settled = await Promise.allSettled(
           batch.map(async (id) => {
             const cached = latestChapterCache.get(id)
@@ -180,23 +268,47 @@ export function createApp(provider: ComicProvider = new ShinigamiProvider()) {
             return chapters
           }),
         )
-        settled.forEach((entry, index) => {
-          result[batch[index]] = entry.status === 'fulfilled'
-            ? entry.value
-            : []
-        })
+        await Promise.all(settled.map(async (entry, index) => {
+          const id = batch[index]
+          if (entry.status === 'fulfilled') {
+            result[id] = entry.value
+            return
+          }
+          try {
+            await new Promise((resolve) => setTimeout(resolve, 200))
+            const chapters = (await provider.chapters(id, 1, 10)).data.slice(0, 2)
+            latestChapterCache.set(id, {
+              expiresAt: Date.now() + 30 * 60_000,
+              data: chapters,
+            })
+            result[id] = chapters
+          } catch {
+            hasPartialFailure = true
+            result[id] = []
+          }
+        }))
       }
-      res.setHeader('Cache-Control', 'public, max-age=300, stale-while-revalidate=1800')
+      res.setHeader(
+        'Cache-Control',
+        hasPartialFailure
+          ? 'no-store'
+          : 'public, max-age=300, stale-while-revalidate=1800',
+      )
+      if (hasPartialFailure) res.setHeader('X-KomikaID-Partial', 'true')
       res.json(result)
     } catch (error) { next(error) }
   })
 
   app.get('/api/comics/:mangaId', async (req, res, next) => {
-    try { res.json(await provider.detail(req.params.mangaId)) } catch (error) { next(error) }
+    try {
+      setCatalogCache(res, 1800)
+      res.json(await provider.detail(req.params.mangaId))
+    } catch (error) { next(error) }
   })
 
   app.get('/api/comics/:mangaId/chapters', async (req, res, next) => {
     try {
+      setCatalogCache(res, 600)
       res.json(await provider.chapters(
         req.params.mangaId,
         queryInt(req.query.page, 1, 1000),
@@ -206,15 +318,24 @@ export function createApp(provider: ComicProvider = new ShinigamiProvider()) {
   })
 
   app.get('/api/comics/:mangaId/chapters/first', async (req, res, next) => {
-    try { res.json(await provider.firstChapter(req.params.mangaId)) } catch (error) { next(error) }
+    try {
+      setCatalogCache(res, 600)
+      res.json(await provider.firstChapter(req.params.mangaId))
+    } catch (error) { next(error) }
   })
 
   app.get('/api/comics/:mangaId/chapters/all', async (req, res, next) => {
-    try { res.json(await provider.allChapters(req.params.mangaId)) } catch (error) { next(error) }
+    try {
+      setCatalogCache(res, 600)
+      res.json(await provider.allChapters(req.params.mangaId))
+    } catch (error) { next(error) }
   })
 
   app.get('/api/chapters/:chapterId', async (req, res, next) => {
-    try { res.json(await provider.chapter(req.params.chapterId)) } catch (error) { next(error) }
+    try {
+      setCatalogCache(res, 3600)
+      res.json(await provider.chapter(req.params.chapterId))
+    } catch (error) { next(error) }
   })
 
   app.get('/api/images', async (req, res, next) => {

@@ -1,0 +1,19 @@
+# KomikaID
+
+KomikaID provides a public, read-only Indonesian comics API.
+
+Base URL: https://komikaid.pages.dev/api
+API index: https://komikaid.pages.dev/api
+OpenAPI 3.1: https://komikaid.pages.dev/api/openapi.json
+Full AI usage guide: https://komikaid.pages.dev/llms-full.txt
+
+## Quick usage
+
+- Browse: GET https://komikaid.pages.dev/api/comics?page=1&pageSize=24&sort=latest
+- Search: GET https://komikaid.pages.dev/api/comics/search?q=solo&page=1&pageSize=24
+- Details: GET https://komikaid.pages.dev/api/comics/{mangaId}
+- Chapters: GET https://komikaid.pages.dev/api/comics/{mangaId}/chapters?page=1&pageSize=50
+- Reader pages: GET https://komikaid.pages.dev/api/chapters/{chapterId}
+
+Public GET requests require no API key. Use the IDs returned by earlier responses.
+Respect HTTP status codes, pagination metadata, cache headers, and rate limits.

@@ -8,9 +8,14 @@ export async function reconcileAccount(token: string) {
     ...merged.favorites.filter((item) => item.enabled).map((item) => item.comicId),
     ...merged.progress.map((item) => item.comicId),
   ])
-  const comics = (await Promise.all(
-    [...comicIds].map((comicId) => api.comic(comicId).catch(() => null)),
-  )).filter((comic) => comic !== null)
+  const ids = [...comicIds]
+  const comics = []
+  for (let start = 0; start < ids.length; start += 6) {
+    const batch = await Promise.all(
+      ids.slice(start, start + 6).map((comicId) => api.comic(comicId).catch(() => null)),
+    )
+    comics.push(...batch.filter((comic) => comic !== null))
+  }
 
   if (comics.length) await library.cacheComics(comics)
   await library.applySync(merged)

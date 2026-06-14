@@ -1,4 +1,3 @@
-import { Bookmark, Star } from 'lucide-react'
 import { useQueryClient } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import type { Chapter, Comic, ReadingProgress } from '../../shared/contracts'
@@ -69,10 +68,6 @@ export function ComicCard({ comic, href = `/comic/${comic.id}`, progress, onClic
             Lanjut Ch. {progress.chapterNumber} · Hal. {progress.pageIndex + 1}
           </strong>
         )}
-        <div className="comic-meta">
-          <span><Star size={14} fill="currentColor" /> {comic.rating.toFixed(1)}</span>
-          <span><Bookmark size={14} /> {Intl.NumberFormat('id', { notation: 'compact' }).format(comic.bookmarks)}</span>
-        </div>
       </div>
     </>
   )

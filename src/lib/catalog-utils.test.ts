@@ -17,11 +17,36 @@ it('formats chapter age with hours and minutes', () => {
   )).toBe('23 jam 01 menit')
 })
 
-it('formats chapter age with days and remaining hours after 24 hours', () => {
+it('keeps chapter age in hours and minutes until 72 hours', () => {
   expect(formatChapterTimestamp(
     '2026-06-12T14:00:00Z',
     Date.parse('2026-06-14T09:36:00Z'),
-  )).toBe('1 hari 19 jam')
+  )).toBe('43 jam 36 menit')
+})
+
+it('formats chapter age in weeks and days from 72 hours until four weeks', () => {
+  expect(formatChapterTimestamp(
+    '2026-06-11T09:36:00Z',
+    Date.parse('2026-06-14T09:36:00Z'),
+  )).toBe('0 minggu 3 hari')
+  expect(formatChapterTimestamp(
+    '2026-05-28T09:36:00Z',
+    Date.parse('2026-06-14T09:36:00Z'),
+  )).toBe('2 minggu 3 hari')
+})
+
+it('formats chapter age in months and days from four weeks until twelve months', () => {
+  expect(formatChapterTimestamp(
+    '2026-05-14T09:36:00Z',
+    Date.parse('2026-06-14T09:36:00Z'),
+  )).toBe('1 bulan 1 hari')
+})
+
+it('formats chapter age in years and months after twelve months', () => {
+  expect(formatChapterTimestamp(
+    '2025-04-14T09:36:00Z',
+    Date.parse('2026-06-14T09:36:00Z'),
+  )).toBe('1 tahun 2 bulan')
 })
 
 const chapter = (number: number, title = ''): Chapter => ({
@@ -62,6 +87,16 @@ describe('catalog presentation helpers', () => {
     const now = Date.parse('2026-06-12T12:00:00Z')
     expect(formatUpdateAge('2026-06-12T11:30:00Z', now)).toEqual({ label: 'Baru', isNew: true })
     expect(formatUpdateAge('2026-06-12T07:00:00Z', now)).toEqual({ label: '5 jam', isNew: false })
+  })
+
+  it('rounds partial days up on compact catalog cards', () => {
+    const now = Date.parse('2026-06-14T12:00:00Z')
+    const releasedAt = '2026-06-11T22:41:00Z'
+    expect(formatUpdateAge(releasedAt, now)).toEqual({
+      label: '3 hari',
+      isNew: false,
+    })
+    expect(formatChapterTimestamp(releasedAt, now)).toBe('61 jam 19 menit')
   })
 
   it('builds compact page controls around the current page', () => {

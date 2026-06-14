@@ -1,27 +1,39 @@
-import { BookOpen, ChevronRight, Clock3, X } from 'lucide-react'
+import { BookOpen, ChevronRight, Clock3, Trash2, X } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
-import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { useEffect, useRef, useState } from 'react'
+import { Link, useSearchParams } from 'react-router-dom'
 import type { Comic, ReadingHistoryItem, ReadingProgress } from '../../shared/contracts'
+import { CatalogPagination } from '../components/CatalogPagination'
 import { ComicCard } from '../components/ComicCard'
-import { EmptyState } from '../components/States'
+import { EmptyState, LoadingGrid } from '../components/States'
 import { LIBRARY_UPDATED_EVENT } from '../lib/library-events'
 import { library } from '../lib/store'
 import { api } from '../lib/api'
 
+const PAGE_SIZE = 20
+
 export function LibraryPage() {
+  const [searchParams, setSearchParams] = useSearchParams()
+  const requestedPage = Number.parseInt(searchParams.get('page') ?? '1', 10)
+  const page = Number.isFinite(requestedPage) && requestedPage > 0 ? requestedPage : 1
+  const collectionStart = useRef<HTMLElement>(null)
   const [favorites, setFavorites] = useState<Comic[]>([])
   const [history, setHistory] = useState<ReadingHistoryItem[]>([])
+  const [isLoading, setIsLoading] = useState(true)
   const [selected, setSelected] = useState<ReadingHistoryItem | null>(null)
   const [chapterHistory, setChapterHistory] = useState<ReadingProgress[]>([])
 
   useEffect(() => {
     let active = true
-    const refresh = () => Promise.all([library.getFavorites(), library.getReadingHistory()]).then(([saved, read]) => {
-      if (!active) return
-      setFavorites(saved)
-      setHistory(read)
-    })
+    const refresh = () => Promise.all([library.getFavorites(), library.getReadingHistory()])
+      .then(([saved, read]) => {
+        if (!active) return
+        setFavorites(saved)
+        setHistory(read)
+      })
+      .finally(() => {
+        if (active) setIsLoading(false)
+      })
     void refresh()
     const onVisibility = () => {
       if (document.visibilityState === 'visible') void refresh()
@@ -52,19 +64,43 @@ export function LibraryPage() {
 
   const historyIds = new Set(history.map((item) => item.comic.id))
   const favoriteOnly = favorites.filter((comic) => !historyIds.has(comic.id))
-  const libraryComics = [...history.map((item) => item.comic), ...favoriteOnly]
+  const collection = [
+    ...history.map((item) => ({ kind: 'history' as const, item, comic: item.comic })),
+    ...favoriteOnly.map((comic) => ({ kind: 'favorite' as const, comic })),
+  ]
+  const totalPages = Math.max(1, Math.ceil(collection.length / PAGE_SIZE))
+  const safePage = Math.min(page, totalPages)
+  const visibleCollection = collection.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE)
+  const visibleHistory = visibleCollection.filter((entry) => entry.kind === 'history')
+  const visibleFavorites = visibleCollection.filter((entry) => entry.kind === 'favorite')
+  const libraryComics = visibleCollection.map((entry) => entry.comic)
   const releases = useQuery({
     queryKey: ['latest-chapters', libraryComics.map((comic) => comic.id).join(',')],
     queryFn: () => api.latestChapters(libraryComics.map((comic) => comic.id)),
     enabled: libraryComics.length > 0,
     staleTime: 30 * 60_000,
   })
+  const goToPage = (nextPage: number) => {
+    if (nextPage < 1 || nextPage > totalPages || nextPage === safePage) return
+    setSearchParams(nextPage === 1 ? {} : { page: String(nextPage) })
+    window.requestAnimationFrame(() => {
+      window.setTimeout(() => collectionStart.current?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start',
+      }), 50)
+    })
+  }
 
   return (
-    <section className="section page-section">
+    <section className="section page-section" ref={collectionStart}>
       <span className="eyebrow">Tersimpan di perangkat</span>
       <h1 className="page-title">Koleksi saya</h1>
-      {history.length > 0 && (
+      {isLoading && (
+        <section className="library-group" aria-label="Memuat koleksi" aria-busy="true">
+          <LoadingGrid />
+        </section>
+      )}
+      {!isLoading && visibleHistory.length > 0 && (
         <section className="library-group" aria-labelledby="reading-history-title">
           <div className="section-heading">
             <div>
@@ -73,11 +109,10 @@ export function LibraryPage() {
             </div>
           </div>
           <div className="comic-grid">
-            {history.map((item) => (
+            {visibleHistory.map(({ item }) => (
               <ComicCard
                 key={item.comic.id}
                 comic={item.comic}
-                progress={item.progress}
                 onClick={() => openHistory(item)}
                 releases={releases.data?.[item.comic.id]}
               />
@@ -85,7 +120,7 @@ export function LibraryPage() {
           </div>
         </section>
       )}
-      {favoriteOnly.length > 0 && (
+      {!isLoading && visibleFavorites.length > 0 && (
         <section className="library-group" aria-labelledby="favorite-title">
           <div className="section-heading">
             <div>
@@ -94,16 +129,24 @@ export function LibraryPage() {
             </div>
           </div>
           <div className="comic-grid">
-            {favoriteOnly.map((comic) => (
+            {visibleFavorites.map(({ comic }) => (
               <ComicCard key={comic.id} comic={comic} releases={releases.data?.[comic.id]} />
             ))}
           </div>
         </section>
       )}
-      {!history.length && !favorites.length && (
+      {!isLoading && !history.length && !favorites.length && (
         <EmptyState
           title="Koleksi masih kosong"
           message="Komik yang mulai dibaca atau disimpan sebagai favorit akan muncul di sini."
+        />
+      )}
+      {!isLoading && collection.length > PAGE_SIZE && (
+        <CatalogPagination
+          page={safePage}
+          totalPages={totalPages}
+          onPageChange={goToPage}
+          label="Halaman koleksi"
         />
       )}
       {selected && (
@@ -152,6 +195,17 @@ export function LibraryPage() {
                 </Link>
               ))}
             </div>
+            <button
+              type="button"
+              className="library-sheet__clear"
+              onClick={async () => {
+                await library.removeReadingHistory(selected.comic.id)
+                setHistory((current) => current.filter((item) => item.comic.id !== selected.comic.id))
+                setSelected(null)
+              }}
+            >
+              <Trash2 size={17} /> Hapus riwayat baca
+            </button>
           </section>
         </div>
       )}

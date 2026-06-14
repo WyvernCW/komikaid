@@ -22,6 +22,7 @@ export interface LibraryRepository {
   getProgress(comicId: string): Promise<ReadingProgress | null>
   getReadingHistory(): Promise<ReadingHistoryItem[]>
   getChapterHistory(comicId: string): Promise<ReadingProgress[]>
+  removeReadingHistory(comicId: string): Promise<void>
   saveDownload(record: DownloadRecord): Promise<void>
   getDownloads(): Promise<DownloadRecord[]>
   deleteDownload(chapterId: string): Promise<void>
@@ -131,6 +132,10 @@ class NativeRepository implements LibraryRepository {
     const latest = await this.getProgress(comicId)
     return latest ? [latest] : []
   }
+  async removeReadingHistory(comicId: string) {
+    await this.db().run('DELETE FROM progress WHERE comic_id=?', [comicId])
+    await this.db().run('DELETE FROM chapter_progress WHERE comic_id=?', [comicId])
+  }
   async saveDownload(record: DownloadRecord) {
     await this.db().run('INSERT OR REPLACE INTO downloads (chapter_id,payload,updated_at) VALUES (?,?,?)', [
       record.chapterId, JSON.stringify(record), record.updatedAt,
@@ -208,7 +213,6 @@ class WebRepository implements LibraryRepository {
     })
     return this.opening
   }
-
   private async open() {
     let timeout: ReturnType<typeof setTimeout> | undefined
     const openRequest = openDB<WebSchema>(DB_NAME, 2, {
@@ -286,6 +290,16 @@ class WebRepository implements LibraryRepository {
     const latest = await this.getProgress(comicId)
     return latest ? [latest] : []
   }
+  async removeReadingHistory(comicId: string) {
+    await this.db().delete('progress', comicId)
+    const transaction = this.db().transaction('chapterProgress', 'readwrite')
+    let cursor = await transaction.store.openCursor()
+    while (cursor) {
+      if (cursor.value.comicId === comicId) await cursor.delete()
+      cursor = await cursor.continue()
+    }
+    await transaction.done
+  }
   async saveDownload(record: DownloadRecord) { await this.db().put('downloads', record, record.chapterId) }
   async getDownloads() { return (await this.db().getAll('downloads')).sort((a, b) => b.updatedAt - a.updatedAt) }
   async deleteDownload(id: string) { await this.db().delete('downloads', id) }
@@ -359,6 +373,11 @@ export const library: LibraryRepository = {
   async getChapterHistory(comicId) {
     await repository.initialize()
     return repository.getChapterHistory(comicId)
+  },
+  async removeReadingHistory(comicId) {
+    await repository.initialize()
+    await repository.removeReadingHistory(comicId)
+    emitLibraryChanged()
   },
   async saveDownload(record) {
     await repository.initialize()

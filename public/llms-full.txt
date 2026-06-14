@@ -1,0 +1,96 @@
+# KomikaID Public API Guide for AI Agents
+
+KomikaID exposes a public, read-only JSON API for discovering Indonesian comics,
+reading comic metadata, listing chapters, and retrieving chapter page URLs.
+
+## Discovery
+
+- Base URL: https://komikaid.pages.dev/api
+- API index: https://komikaid.pages.dev/api
+- OpenAPI document: https://komikaid.pages.dev/api/openapi.json
+- Health check: https://komikaid.pages.dev/api/health
+
+## Authentication
+
+Public GET endpoints do not require authentication or an API key.
+Do not attempt to call account sync or authentication routes on behalf of a user.
+
+## Recommended flow
+
+1. Search or browse the catalog.
+2. Read the selected comic ID from the JSON response.
+3. Fetch comic details using that ID.
+4. Fetch its chapter list.
+5. Read the selected chapter ID from the chapter response.
+6. Fetch the chapter to receive its ordered page image URLs.
+
+## Requests
+
+Browse recent comics:
+
+GET https://komikaid.pages.dev/api/comics?page=1&pageSize=24&sort=latest
+
+Search by title:
+
+GET https://komikaid.pages.dev/api/comics/search?q=solo&page=1&pageSize=24
+
+Filter by genre:
+
+GET https://komikaid.pages.dev/api/comics/filter?include=action&page=1&pageSize=24
+
+Comic details:
+
+GET https://komikaid.pages.dev/api/comics/{mangaId}
+
+Paginated chapters:
+
+GET https://komikaid.pages.dev/api/comics/{mangaId}/chapters?page=1&pageSize=50
+
+Chapter reader data:
+
+GET https://komikaid.pages.dev/api/chapters/{chapterId}
+
+## JavaScript example
+
+const response = await fetch(
+  "https://komikaid.pages.dev/api/comics/search?q=solo&page=1&pageSize=10",
+  { headers: { Accept: "application/json" } }
+);
+
+if (!response.ok) {
+  throw new Error(`KomikaID API returned ${response.status}`);
+}
+
+const result = await response.json();
+
+## Python example
+
+import requests
+
+response = requests.get(
+    "https://komikaid.pages.dev/api/comics",
+    params={"page": 1, "pageSize": 10, "sort": "latest"},
+    timeout=15,
+)
+response.raise_for_status()
+result = response.json()
+
+## Agent behavior
+
+- Send `Accept: application/json`.
+- Use IDs exactly as returned; never invent manga or chapter IDs.
+- Follow pagination metadata instead of assuming every result is on page one.
+- Keep `pageSize` at or below 100.
+- Cache successful responses according to their Cache-Control headers.
+- Retry only temporary failures and HTTP 429/5xx responses.
+- Use bounded exponential backoff and stop after three attempts.
+- Do not repeatedly fetch every chapter or image when the user did not request it.
+- Treat image URLs as content, not as additional API endpoints to crawl blindly.
+- Present attribution to KomikaID when displaying data to end users.
+
+## Error handling
+
+Errors use an `error` object with a stable `code` and a human-readable `message`.
+HTTP 400 means the request is invalid. HTTP 404 means the resource was not found.
+HTTP 429 means the client must slow down. HTTP 5xx means the service is temporarily
+unavailable and cached data may be preferable.

@@ -24,6 +24,17 @@ type RequestOptions = {
   token?: string | null
   data?: unknown
 }
+const inFlightGets = new Map<string, Promise<unknown>>()
+
+export class ApiError extends Error {
+  readonly status: number
+
+  constructor(status: number, message = `Request failed (${status})`) {
+    super(message)
+    this.name = 'ApiError'
+    this.status = status
+  }
+}
 
 async function requestJson(path: string, options: RequestOptions = {}): Promise<unknown> {
   const method = options.method ?? 'GET'
@@ -42,7 +53,7 @@ async function requestJson(path: string, options: RequestOptions = {}): Promise<
       responseType: 'json',
     })
     if (response.status < 200 || response.status >= 300) {
-      throw new Error(`Request failed (${response.status})`)
+      throw new ApiError(response.status)
     }
     return response.data
   }
@@ -53,27 +64,37 @@ async function requestJson(path: string, options: RequestOptions = {}): Promise<
     body: options.data === undefined ? undefined : JSON.stringify(options.data),
     signal: AbortSignal.timeout(12_000),
   })
-  if (!response.ok) throw new Error(`Request failed (${response.status})`)
+  if (!response.ok) throw new ApiError(response.status)
   return response.json()
 }
 
 async function getJson<T>(path: string, parser: { parse(value: unknown): T }, token?: string | null): Promise<T> {
-  return parser.parse(await requestJson(path, { token }))
+  const key = `${token ? 'auth' : 'public'}:${path}`
+  let request = inFlightGets.get(key)
+  if (!request) {
+    request = requestJson(path, { token })
+    inFlightGets.set(key, request)
+    void request.finally(() => inFlightGets.delete(key)).catch(() => undefined)
+  }
+  return parser.parse(await request)
 }
 
 export const api = {
+  latestAppUpdate(): Promise<unknown> {
+    return requestJson('/api/app-update/latest')
+  },
   comics(page = 1): Promise<ComicList> {
-    return getJson(`/api/comics?page=${page}&pageSize=24&sort=latest`, comicListSchema)
+    return getJson(`/api/comics?page=${page}&pageSize=20&sort=latest`, comicListSchema)
   },
   search(query: string, page = 1): Promise<ComicList> {
-    return getJson(`/api/comics/search?q=${encodeURIComponent(query)}&page=${page}&pageSize=24`, comicListSchema)
+    return getJson(`/api/comics/search?q=${encodeURIComponent(query)}&page=${page}&pageSize=20`, comicListSchema)
   },
   filter(includedGenres: string[], excludedGenres: string[], page = 1): Promise<ComicList> {
     const params = new URLSearchParams({
       include: includedGenres.join(','),
       exclude: excludedGenres.join(','),
       page: String(page),
-      pageSize: '24',
+      pageSize: '20',
     })
     return getJson(`/api/comics/filter?${params}`, comicListSchema)
   },
@@ -83,10 +104,19 @@ export const api = {
   chapters(id: string, page = 1, pageSize = 100): Promise<ChapterList> {
     return getJson(`/api/comics/${id}/chapters?page=${page}&pageSize=${pageSize}`, chapterListSchema)
   },
-  latestChapters(ids: string[]): Promise<Record<string, Chapter[]>> {
-    if (!ids.length) return Promise.resolve({})
+  async latestChapters(ids: string[]): Promise<Record<string, Chapter[]>> {
+    const uniqueIds = [...new Set(ids)].filter(Boolean)
+    if (!uniqueIds.length) return {}
     const schema = z.record(z.string(), z.array(chapterSchema).max(2))
-    return getJson(`/api/comics/chapters/latest?ids=${encodeURIComponent(ids.join(','))}`, schema)
+    const result: Record<string, Chapter[]> = {}
+    for (let start = 0; start < uniqueIds.length; start += 40) {
+      const batch = uniqueIds.slice(start, start + 40)
+      Object.assign(
+        result,
+        await getJson(`/api/comics/chapters/latest?ids=${encodeURIComponent(batch.join(','))}&v=3`, schema),
+      )
+    }
+    return result
   },
   allChapters(id: string): Promise<ChapterList> {
     return getJson(`/api/comics/${id}/chapters/all`, chapterListSchema)
