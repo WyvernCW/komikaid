@@ -1,7 +1,7 @@
 apply plugin: 'com.android.application'
 
-def komikaVersionCode = (project.findProperty("VERSION_CODE") ?: System.getenv("VERSION_CODE") ?: "1").toInteger()
-def komikaVersionName = project.findProperty("VERSION_NAME") ?: System.getenv("VERSION_NAME") ?: "1.0.0"
+def komikaVersionCode = (project.findProperty("VERSION_CODE") ?: System.getenv("VERSION_CODE") ?: "2").toInteger()
+def komikaVersionName = project.findProperty("VERSION_NAME") ?: System.getenv("VERSION_NAME") ?: "1.1.0"
 
 android {
     namespace = "id.komikaid.app"

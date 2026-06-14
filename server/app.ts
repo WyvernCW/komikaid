@@ -131,10 +131,7 @@ export function createApp(provider: ComicProvider = new ShinigamiProvider()) {
         throw Object.assign(new Error('Release APK URL is not trusted'), { status: 502 })
       }
       const rawChangelog = release.body || 'Pembaruan dan perbaikan terbaru untuk KomikaID.'
-      const markdownHeading = rawChangelog.lastIndexOf('# ')
-      const changelog = markdownHeading >= 0
-        ? rawChangelog.slice(markdownHeading).trim()
-        : rawChangelog.replace(/<[^>]+>/g, '').trim()
+      const changelog = rawChangelog.trim()
       const data = {
         version: release.tag_name.replace(/^v/i, ''),
         tag: release.tag_name,

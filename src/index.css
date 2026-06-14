@@ -73,13 +73,27 @@ img { display: block; max-width: 100%; }
 .update-dialog > header { padding: 20px; display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; border-bottom: 1px solid var(--line); }
 .update-dialog h2 { margin: 5px 0 4px; font-family: Syne, sans-serif; font-size: 24px; line-height: 1.2; }
 .update-dialog header p, .update-message { margin: 0; color: var(--muted); font-size: 13px; }
-.update-changelog { padding: 20px; overflow-y: auto; color: var(--text); font-size: 14px; line-height: 1.65; }
+.update-changelog {
+  min-height: 0;
+  padding: 20px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+  color: var(--text);
+  font-size: 14px;
+  line-height: 1.65;
+}
 .update-changelog > :first-child { margin-top: 0; }
 .update-changelog > :last-child { margin-bottom: 0; }
 .update-changelog h1, .update-changelog h2, .update-changelog h3 { margin: 20px 0 8px; font-family: Syne, sans-serif; font-size: 17px; }
 .update-changelog a { color: var(--accent); text-decoration: underline; }
-.update-changelog code { padding: 2px 5px; background: var(--bg); }
-.update-changelog pre { padding: 12px; overflow-x: auto; background: var(--bg); }
+.update-changelog p, .update-changelog li { overflow-wrap: anywhere; }
+.update-changelog img { height: auto; }
+.update-changelog table { display: block; max-width: 100%; overflow-x: auto; border-collapse: collapse; }
+.update-changelog th, .update-changelog td { padding: 8px; border: 1px solid var(--line); }
+.update-changelog code { padding: 2px 5px; background: var(--canvas); }
+.update-changelog pre { max-width: 100%; padding: 12px; overflow-x: auto; background: var(--canvas); }
 .update-dialog > footer { padding: 16px 20px 20px; display: grid; grid-template-columns: 1fr 1.7fr; gap: 8px; border-top: 1px solid var(--line); }
 .update-dialog > footer button { min-height: 48px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
 .update-progress { position: relative; height: 4px; margin: 0 20px 24px; background: var(--line); }

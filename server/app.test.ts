@@ -1,5 +1,5 @@
 import request from 'supertest'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import type { ComicProvider } from './provider.js'
 import { createApp } from './app.js'
 
@@ -34,6 +34,45 @@ describe('KomikaID API', () => {
     const response = await request(createApp(provider)).get('/api/health')
     expect(response.status).toBe(200)
     expect(response.body.ok).toBe(true)
+  })
+
+  it('returns the complete GitHub release Markdown', async () => {
+    const markdown = [
+      '# KomikaID 1.1.0',
+      '',
+      'Pembukaan rilis.',
+      '',
+      '## Perubahan',
+      '- Pembaruan pertama',
+      '- Pembaruan kedua',
+      '',
+      '## Catatan akhir',
+      'Bagian terakhir.',
+    ].join('\n')
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(JSON.stringify({
+      tag_name: 'v1.1.0',
+      name: 'KomikaID 1.1.0',
+      body: markdown,
+      published_at: '2026-06-14T08:00:00.000Z',
+      html_url: 'https://github.com/WyvernCW/komikaid/releases/tag/v1.1.0',
+      draft: false,
+      prerelease: false,
+      assets: [{
+        name: 'komikaid.apk',
+        browser_download_url: 'https://github.com/WyvernCW/komikaid/releases/download/v1.1.0/komikaid.apk',
+        content_type: 'application/vnd.android.package-archive',
+        size: 1024,
+      }],
+    }), { status: 200, headers: { 'Content-Type': 'application/json' } }))
+
+    try {
+      const response = await request(createApp(provider)).get('/api/app-update/latest')
+      expect(response.status).toBe(200)
+      expect(response.body.version).toBe('1.1.0')
+      expect(response.body.changelog).toBe(markdown)
+    } finally {
+      fetchMock.mockRestore()
+    }
   })
 
   it('validates search queries', async () => {
