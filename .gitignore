@@ -31,6 +31,11 @@ qa-*.xml
 .env.local
 .env*
 !.env.example
+<<<<<<< HEAD
+=======
+public/clerk-js*
+public/clerk-js/*
+>>>>>>> 3e83d39 (some changes on mobile.)
 
 android/app/build/
 android/.gradle/

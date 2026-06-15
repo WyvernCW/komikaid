@@ -132,7 +132,20 @@ export function ComicPage() {
             aria-label="Cari chapter"
           />
         </label>
+<<<<<<< HEAD
         {chapters.isPending && <p className="chapter-feedback">Memuat seluruh chapter...</p>}
+=======
+        {chapters.isPending && (
+          <div className="chapter-skeleton" aria-label="Memuat daftar chapter" aria-busy="true">
+            {Array.from({ length: 5 }, (_, i) => (
+              <div key={i} className="chapter-skeleton__row" style={{ animationDelay: `${i * 40}ms` }}>
+                <span className="chapter-skeleton__num" />
+                <span className="chapter-skeleton__title" />
+              </div>
+            ))}
+          </div>
+        )}
+>>>>>>> 3e83d39 (some changes on mobile.)
         {chapterSearch && !visibleChapters.length && !chapters.isPending && (
           <p className="chapter-feedback">Chapter yang dicari tidak ditemukan.</p>
         )}

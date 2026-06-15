@@ -1,7 +1,11 @@
 {
   "name": "komikaid",
   "private": true,
+<<<<<<< HEAD
   "version": "1.1.0",
+=======
+  "version": "1.2.0",
+>>>>>>> 3e83d39 (some changes on mobile.)
   "type": "module",
   "scripts": {
     "dev": "concurrently -k -n api,web -c yellow,cyan \"npm:dev:api\" \"npm:dev:web\"",
@@ -51,6 +55,10 @@
     "@capacitor/android": "^8.4.0",
     "@capacitor/cli": "^8.4.0",
     "@capacitor/ios": "^8.4.0",
+<<<<<<< HEAD
+=======
+    "@clerk/clerk-js": "^6.16.1",
+>>>>>>> 3e83d39 (some changes on mobile.)
     "@eslint/js": "^10.0.1",
     "@playwright/test": "^1.60.0",
     "@types/cors": "^2.8.19",

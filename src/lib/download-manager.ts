@@ -9,6 +9,10 @@ type StorageReport = { downloadedBytes: number; completed: number; active: numbe
 
 const WEB_CACHE = 'komikaid-downloads-v1'
 const activeJobs = new Set<string>()
+<<<<<<< HEAD
+=======
+const enqueueLocks = new Set<string>()
+>>>>>>> 3e83d39 (some changes on mobile.)
 
 export function normalizeDownloadRecord(record: DownloadRecord): DownloadRecord {
   return {
@@ -107,9 +111,18 @@ class DownloadManager {
   }
 
   async enqueue(comic: Comic, chapter: ChapterDetail) {
+<<<<<<< HEAD
     const existing = await this.find(chapter.id)
     if (existing?.status === 'complete' || activeJobs.has(chapter.id)) return
     const record: DownloadRecord = {
+=======
+    if (enqueueLocks.has(chapter.id)) return
+    enqueueLocks.add(chapter.id)
+    try {
+      const existing = await this.find(chapter.id)
+      if (existing?.status === 'complete') return
+      const record: DownloadRecord = {
+>>>>>>> 3e83d39 (some changes on mobile.)
       chapterId: chapter.id,
       comicId: comic.id,
       title: comic.title,
@@ -128,6 +141,12 @@ class DownloadManager {
     }
     await this.save(record)
     await this.process(record)
+<<<<<<< HEAD
+=======
+    } finally {
+      enqueueLocks.delete(chapter.id)
+    }
+>>>>>>> 3e83d39 (some changes on mobile.)
   }
 
   async getOfflineChapter(chapterId: string): Promise<ChapterDetail | null> {

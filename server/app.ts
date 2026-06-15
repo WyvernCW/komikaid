@@ -97,6 +97,39 @@ export function createApp(provider: ComicProvider = new ShinigamiProvider()) {
   })
   app.get('/api/health', (_req, res) => res.json({ ok: true, service: 'komikaid-api' }))
 
+<<<<<<< HEAD
+=======
+  app.get('/api/app-update/releases', async (_req, res, next) => {
+    try {
+      const response = await fetch('https://api.github.com/repos/WyvernCW/komikaid/releases?per_page=20', {
+        headers: {
+          Accept: 'application/vnd.github+json',
+          'User-Agent': 'KomikaID-Updater',
+          ...(process.env.GITHUB_TOKEN ? { Authorization: `Bearer ${process.env.GITHUB_TOKEN}` } : {}),
+          'X-GitHub-Api-Version': '2022-11-28',
+        },
+        signal: AbortSignal.timeout(10_000),
+      })
+      if (!response.ok) {
+        throw Object.assign(new Error(`GitHub releases API returned ${response.status}`), { status: 502 })
+      }
+      const releases = z.array(githubReleaseSchema).parse(await response.json())
+      const filtered = releases.filter((r) => !r.draft && !r.prerelease)
+      const result = filtered.map((release) => ({
+        version: release.tag_name.replace(/^v/i, ''),
+        tag: release.tag_name,
+        title: release.name || release.tag_name,
+        changelog: (release.body || 'Pembaruan dan perbaikan terbaru untuk KomikaID.').trim(),
+        publishedAt: release.published_at,
+      }))
+      res.setHeader('Cache-Control', 'public, max-age=120, s-maxage=600, stale-while-revalidate=1800')
+      return res.json({ releases: result })
+    } catch (error) {
+      return next(error)
+    }
+  })
+
+>>>>>>> 3e83d39 (some changes on mobile.)
   app.get('/api/app-update/latest', async (_req, res, next) => {
     try {
       if (appUpdateCache && appUpdateCache.expiresAt > Date.now()) {

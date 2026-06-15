@@ -11,6 +11,10 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import type { DownloadRecord } from '../../shared/contracts'
 import { CatalogPagination } from '../components/CatalogPagination'
+<<<<<<< HEAD
+=======
+import { PullToRefresh } from '../components/PullToRefresh'
+>>>>>>> 3e83d39 (some changes on mobile.)
 import { EmptyState } from '../components/States'
 import { downloadManager } from '../lib/download-manager'
 
@@ -82,6 +86,10 @@ export function DownloadsPage() {
   }
 
   return (
+<<<<<<< HEAD
+=======
+    <PullToRefresh onRefresh={refresh}>
+>>>>>>> 3e83d39 (some changes on mobile.)
     <section className="section page-section downloads-page" ref={pageStart}>
       <div className="section-heading downloads-heading">
         <div>
@@ -174,5 +182,9 @@ export function DownloadsPage() {
       )}
       <CatalogPagination page={safePage} totalPages={totalPages} onPageChange={goToPage} label="Halaman unduhan" />
     </section>
+<<<<<<< HEAD
+=======
+    </PullToRefresh>
+>>>>>>> 3e83d39 (some changes on mobile.)
   )
 }

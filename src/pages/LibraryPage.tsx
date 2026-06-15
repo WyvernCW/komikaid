@@ -1,10 +1,18 @@
 import { BookOpen, ChevronRight, Clock3, Trash2, X } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
+<<<<<<< HEAD
 import { useEffect, useRef, useState } from 'react'
+=======
+import { useCallback, useEffect, useRef, useState } from 'react'
+>>>>>>> 3e83d39 (some changes on mobile.)
 import { Link, useSearchParams } from 'react-router-dom'
 import type { Comic, ReadingHistoryItem, ReadingProgress } from '../../shared/contracts'
 import { CatalogPagination } from '../components/CatalogPagination'
 import { ComicCard } from '../components/ComicCard'
+<<<<<<< HEAD
+=======
+import { PullToRefresh } from '../components/PullToRefresh'
+>>>>>>> 3e83d39 (some changes on mobile.)
 import { EmptyState, LoadingGrid } from '../components/States'
 import { LIBRARY_UPDATED_EVENT } from '../lib/library-events'
 import { library } from '../lib/store'
@@ -23,6 +31,7 @@ export function LibraryPage() {
   const [selected, setSelected] = useState<ReadingHistoryItem | null>(null)
   const [chapterHistory, setChapterHistory] = useState<ReadingProgress[]>([])
 
+<<<<<<< HEAD
   useEffect(() => {
     let active = true
     const refresh = () => Promise.all([library.getFavorites(), library.getReadingHistory()])
@@ -46,6 +55,32 @@ export function LibraryPage() {
       document.removeEventListener('visibilitychange', onVisibility)
     }
   }, [])
+=======
+  const refresh = useCallback(async () => {
+    const [saved, read] = await Promise.all([library.getFavorites(), library.getReadingHistory()])
+    setFavorites(saved)
+    setHistory(read)
+    setIsLoading(false)
+  }, [])
+
+  useEffect(() => {
+    let active = true
+    const r = () => {
+      if (active) void refresh()
+    }
+    void r()
+    const onVisibility = () => {
+      if (document.visibilityState === 'visible') void r()
+    }
+    window.addEventListener(LIBRARY_UPDATED_EVENT, r)
+    document.addEventListener('visibilitychange', onVisibility)
+    return () => {
+      active = false
+      window.removeEventListener(LIBRARY_UPDATED_EVENT, r)
+      document.removeEventListener('visibilitychange', onVisibility)
+    }
+  }, [refresh])
+>>>>>>> 3e83d39 (some changes on mobile.)
 
   useEffect(() => {
     if (!selected) return
@@ -92,6 +127,10 @@ export function LibraryPage() {
   }
 
   return (
+<<<<<<< HEAD
+=======
+    <PullToRefresh onRefresh={refresh}>
+>>>>>>> 3e83d39 (some changes on mobile.)
     <section className="section page-section" ref={collectionStart}>
       <span className="eyebrow">Tersimpan di perangkat</span>
       <h1 className="page-title">Koleksi saya</h1>
@@ -115,6 +154,10 @@ export function LibraryPage() {
                 comic={item.comic}
                 onClick={() => openHistory(item)}
                 releases={releases.data?.[item.comic.id]}
+<<<<<<< HEAD
+=======
+                releasesLoading={releases.isLoading}
+>>>>>>> 3e83d39 (some changes on mobile.)
               />
             ))}
           </div>
@@ -130,7 +173,11 @@ export function LibraryPage() {
           </div>
           <div className="comic-grid">
             {visibleFavorites.map(({ comic }) => (
+<<<<<<< HEAD
               <ComicCard key={comic.id} comic={comic} releases={releases.data?.[comic.id]} />
+=======
+              <ComicCard key={comic.id} comic={comic} releases={releases.data?.[comic.id]} releasesLoading={releases.isLoading} />
+>>>>>>> 3e83d39 (some changes on mobile.)
             ))}
           </div>
         </section>
@@ -210,5 +257,9 @@ export function LibraryPage() {
         </div>
       )}
     </section>
+<<<<<<< HEAD
+=======
+    </PullToRefresh>
+>>>>>>> 3e83d39 (some changes on mobile.)
   )
 }

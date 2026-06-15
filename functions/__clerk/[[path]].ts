@@ -12,7 +12,12 @@ const CLERK_PROXY_URL = 'https://komikaid.pages.dev/__clerk'
 const CLOUDFLARE_COOKIES = /^(?:__cf_bm|_cfuvid)=/i
 
 export async function onRequest({ env, request }: PagesContext): Promise<Response> {
+<<<<<<< HEAD
   if (!env.CLERK_SECRET_KEY?.startsWith('sk_live_')) {
+=======
+  const secretKey = (env as Record<string, string>)['CLERK_SECRET_KEY'] || ''
+  if (!secretKey.startsWith('sk_live_')) {
+>>>>>>> 3e83d39 (some changes on mobile.)
     return new Response('Clerk production secret is not configured.', { status: 503 })
   }
 
@@ -24,6 +29,7 @@ export async function onRequest({ env, request }: PagesContext): Promise<Respons
   const headers = new Headers(request.headers)
   headers.delete('host')
   headers.set('Clerk-Proxy-Url', CLERK_PROXY_URL)
+<<<<<<< HEAD
   headers.set('Clerk-Secret-Key', env.CLERK_SECRET_KEY)
   headers.set('X-Forwarded-For', request.headers.get('CF-Connecting-IP') || '')
 
@@ -47,4 +53,40 @@ export async function onRequest({ env, request }: PagesContext): Promise<Respons
     statusText: response.statusText,
     headers: responseHeaders,
   })
+=======
+  headers.set('Clerk-Secret-Key', secretKey)
+  headers.set('X-Forwarded-For', request.headers.get('CF-Connecting-IP') || '')
+
+  try {
+    const body = request.method === 'GET' || request.method === 'HEAD'
+      ? undefined
+      : await request.clone().arrayBuffer()
+    const response = await fetch(upstreamUrl.toString(), {
+      method: request.method,
+      headers,
+      body,
+      redirect: 'manual',
+    })
+    const responseHeaders = new Headers(response.headers)
+    const cookieHeaders = (
+      response.headers as Headers & { getSetCookie?: () => string[] }
+    ).getSetCookie?.() ?? []
+    if (cookieHeaders.length) {
+      responseHeaders.delete('set-cookie')
+      for (const cookie of cookieHeaders) {
+        if (!CLOUDFLARE_COOKIES.test(cookie)) responseHeaders.append('set-cookie', cookie)
+      }
+    }
+    return new Response(response.body, {
+      status: response.status,
+      statusText: response.statusText,
+      headers: responseHeaders,
+    })
+  } catch (error) {
+    return new Response(JSON.stringify({
+      error: 'Clerk proxy error',
+      message: error instanceof Error ? error.message : String(error),
+    }), { status: 502, headers: { 'content-type': 'application/json' } })
+  }
+>>>>>>> 3e83d39 (some changes on mobile.)
 }

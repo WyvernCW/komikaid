@@ -1,8 +1,14 @@
 import { Show, UserButton, useAuth, useUser } from '@clerk/react'
 import { useSignIn, useSignUp } from '@clerk/react/legacy'
 import { Capacitor } from '@capacitor/core'
+<<<<<<< HEAD
 import { Bell, Cloud, Mail, Moon, ShieldCheck, UserPlus, X } from 'lucide-react'
 import { type FormEvent, useState } from 'react'
+=======
+import { Bell, Cloud, Mail, Moon, ShieldCheck, UserPlus, X, FileText } from 'lucide-react'
+import { type FormEvent, useState } from 'react'
+import ChangelogViewer from '../components/ChangelogViewer'
+>>>>>>> 3e83d39 (some changes on mobile.)
 import { ProfileSkeleton } from '../components/States'
 import { reconcileAccount } from '../lib/account-sync'
 import { findEmailCodeFactor, getAuthError } from '../lib/auth-errors'
@@ -22,6 +28,10 @@ function ProfileContent() {
   const [status, setStatus] = useState('')
   const [notificationStatus, setNotificationStatus] = useState('')
   const [accountOpen, setAccountOpen] = useState(false)
+<<<<<<< HEAD
+=======
+  const [changelogOpen, setChangelogOpen] = useState(false)
+>>>>>>> 3e83d39 (some changes on mobile.)
   const [mode, setMode] = useState<AccountMode>('sign-up')
   const [emailStep, setEmailStep] = useState<EmailStep>('form')
   const [signInMethod, setSignInMethod] = useState<SignInMethod>('code')
@@ -308,7 +318,13 @@ function ProfileContent() {
             setNotificationStatus(result.message)
           }}><Bell /><span><strong>Notifikasi rilis</strong><small>{notificationStatus || 'Izinkan pengingat chapter baru'}</small></span></button>
           <div><Moon /><span><strong>Mode gelap</strong><small>Aktif secara default</small></span></div>
+<<<<<<< HEAD
         </div>
+=======
+          <button onClick={() => setChangelogOpen(true)}><FileText /><span><strong>Catatan rilis</strong><small>Riwayat pembaruan KomikaID</small></span></button>
+        </div>
+        {changelogOpen && <ChangelogViewer onClose={() => setChangelogOpen(false)} />}
+>>>>>>> 3e83d39 (some changes on mobile.)
       </Show>
     </section>
   )

@@ -26,10 +26,25 @@ type RequestOptions = {
 }
 const inFlightGets = new Map<string, Promise<unknown>>()
 
+<<<<<<< HEAD
 export class ApiError extends Error {
   readonly status: number
 
   constructor(status: number, message = `Request failed (${status})`) {
+=======
+const STATUS_MESSAGES: Record<number, string> = {
+  429: 'Terlalu banyak permintaan. Coba lagi nanti.',
+  502: 'Server sedang sibuk. Coba lagi nanti.',
+  503: 'Server tidak tersedia. Coba lagi nanti.',
+  504: 'Server tidak merespons. Coba lagi nanti.',
+}
+
+export class ApiError extends Error {
+  readonly status: number
+
+  constructor(status: number) {
+    const message = STATUS_MESSAGES[status] || `Permintaan gagal (${status})`
+>>>>>>> 3e83d39 (some changes on mobile.)
     super(message)
     this.name = 'ApiError'
     this.status = status
@@ -83,6 +98,12 @@ export const api = {
   latestAppUpdate(): Promise<unknown> {
     return requestJson('/api/app-update/latest')
   },
+<<<<<<< HEAD
+=======
+  releases(): Promise<unknown> {
+    return requestJson('/api/app-update/releases')
+  },
+>>>>>>> 3e83d39 (some changes on mobile.)
   comics(page = 1): Promise<ComicList> {
     return getJson(`/api/comics?page=${page}&pageSize=20&sort=latest`, comicListSchema)
   },

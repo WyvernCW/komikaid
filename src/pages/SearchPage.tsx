@@ -1,9 +1,17 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Ban, Check, ChevronDown, Flame, RotateCcw, Search, Tags } from 'lucide-react'
+<<<<<<< HEAD
 import { useEffect, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { ComicCard } from '../components/ComicCard'
 import { CatalogPagination } from '../components/CatalogPagination'
+=======
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
+import { ComicCard } from '../components/ComicCard'
+import { CatalogPagination } from '../components/CatalogPagination'
+import { PullToRefresh } from '../components/PullToRefresh'
+>>>>>>> 3e83d39 (some changes on mobile.)
 import { EmptyState, ErrorState, LoadingGrid } from '../components/States'
 import { api } from '../lib/api'
 import {
@@ -73,8 +81,16 @@ export function SearchPage() {
   const showResults = hasTextQuery || hasGenreFilters
   const isLoading = showResults ? result.isLoading : discovery.isLoading
   const activeGenres = genres.filter((genre) => genreFilters[genre.slug])
+<<<<<<< HEAD
   const totalPages = Math.max(1, result.data?.meta.totalPages ?? 1)
   const filtered = source
+=======
+  const filtered = source
+  const filteredTotalPages = hasTextQuery && hasGenreFilters
+    ? Math.max(1, Math.ceil(filtered.length / 20))
+    : result.data?.meta.totalPages ?? 1
+  const totalPages = Math.max(1, filteredTotalPages)
+>>>>>>> 3e83d39 (some changes on mobile.)
   const hotPageSize = 12
   const rankedHotComics = rankHotComics(discovery.data ?? [], discovery.data?.length)
   const hotTotalPages = Math.max(1, Math.ceil(rankedHotComics.length / hotPageSize))
@@ -96,6 +112,7 @@ export function SearchPage() {
     const nextComics = rankedHotComics.slice(hotPage * hotPageSize, (hotPage + 1) * hotPageSize)
     if (!nextComics.length) return
     const ids = nextComics.map((comic) => comic.id)
+<<<<<<< HEAD
     const timer = window.setTimeout(() => {
       void queryClient.prefetchQuery({
         queryKey: ['latest-chapters', ids.join(',')],
@@ -104,6 +121,13 @@ export function SearchPage() {
       })
     }, 250)
     return () => window.clearTimeout(timer)
+=======
+    void queryClient.prefetchQuery({
+      queryKey: ['latest-chapters', ids.join(',')],
+      queryFn: () => api.latestChapters(ids),
+      staleTime: 30 * 60_000,
+    })
+>>>>>>> 3e83d39 (some changes on mobile.)
   }, [hotPage, hotTotalPages, queryClient, rankedHotComics, showResults])
 
   useEffect(() => {
@@ -172,7 +196,14 @@ export function SearchPage() {
     })
   }
 
+<<<<<<< HEAD
   return (
+=======
+  const refresh = useCallback(() => (showResults ? result.refetch() : discovery.refetch()), [showResults, result, discovery])
+
+  return (
+    <PullToRefresh onRefresh={refresh}>
+>>>>>>> 3e83d39 (some changes on mobile.)
     <section className="section page-section" ref={resultsStart}>
       <span className="eyebrow">Temukan cerita berikutnya</span><h1 className="page-title">Cari komik</h1>
       <form className="search-box" onSubmit={(event) => {
@@ -268,12 +299,21 @@ export function SearchPage() {
       {isLoading ? <LoadingGrid /> : showResults && filtered.length ? (
         <>
           <div className="search-result-count">
+<<<<<<< HEAD
             {hasTextQuery && !hasGenreFilters
               ? `${result.data?.meta.totalRecords ?? filtered.length} komik cocok`
               : `${result.data?.meta.totalRecords ?? filtered.length} komik cocok`}
           </div>
           <div className="comic-grid">{filtered.map((comic) => (
             <ComicCard key={comic.id} comic={comic} releases={releases.data?.[comic.id]} />
+=======
+            {hasTextQuery && hasGenreFilters
+              ? `${filtered.length} komik cocok`
+              : `${result.data?.meta.totalRecords ?? filtered.length} komik cocok`}
+          </div>
+          <div className="comic-grid">{filtered.map((comic) => (
+            <ComicCard key={comic.id} comic={comic} releases={releases.data?.[comic.id]} releasesLoading={releases.isLoading} />
+>>>>>>> 3e83d39 (some changes on mobile.)
           ))}</div>
           <CatalogPagination page={page} totalPages={totalPages} onPageChange={goToPage} label="Halaman hasil pencarian" />
         </>
@@ -300,6 +340,10 @@ export function SearchPage() {
                 comic={comic}
                 priority={index < 4}
                 releases={releases.data?.[comic.id]}
+<<<<<<< HEAD
+=======
+                releasesLoading={releases.isLoading}
+>>>>>>> 3e83d39 (some changes on mobile.)
               />
             ))}
           </div>
@@ -312,5 +356,9 @@ export function SearchPage() {
         </section>
       )}
     </section>
+<<<<<<< HEAD
+=======
+    </PullToRefresh>
+>>>>>>> 3e83d39 (some changes on mobile.)
   )
 }

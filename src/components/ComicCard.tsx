@@ -11,20 +11,44 @@ type ComicCardProps = {
   onClick?: () => void
   priority?: boolean
   releases?: Chapter[]
+<<<<<<< HEAD
 }
 
 export function ComicCard({ comic, href = `/comic/${comic.id}`, progress, onClick, priority = false, releases }: ComicCardProps) {
   const queryClient = useQueryClient()
   const chapterRows = releases ?? (
     comic.latestChapterNumber == null ? [] : [{
+=======
+  releasesLoading?: boolean
+}
+
+function buildChapterRows(comic: Comic, releases: Chapter[] | undefined): Chapter[] {
+  const fromApi = releases?.length ? releases : []
+  const rows = fromApi.slice(0, 2)
+  if (rows.length < 2 && comic.latestChapterNumber != null && !rows.some((c) => c.number === comic.latestChapterNumber)) {
+    rows.push({
+>>>>>>> 3e83d39 (some changes on mobile.)
       id: comic.latestChapterId ?? comic.id,
       comicId: comic.id,
       number: comic.latestChapterNumber,
       title: '',
       releaseDate: comic.latestChapterTime ?? '',
       views: 0,
+<<<<<<< HEAD
     }]
   )
+=======
+    })
+  }
+  return rows
+}
+
+export function ComicCard({ comic, href = `/comic/${comic.id}`, progress, onClick, priority = false, releases, releasesLoading }: ComicCardProps) {
+  const queryClient = useQueryClient()
+  const chapterLoading = releasesLoading || releases === undefined
+  const chapterRows = chapterLoading ? [] : buildChapterRows(comic, releases)
+  const hasChapters = chapterRows.length > 0
+>>>>>>> 3e83d39 (some changes on mobile.)
   const content = (
     <>
       <div className="comic-cover">
@@ -50,7 +74,15 @@ export function ComicCard({ comic, href = `/comic/${comic.id}`, progress, onClic
             <h3>{comic.title}</h3>
           </Link>
         ) : <h3>{comic.title}</h3>}
+<<<<<<< HEAD
         {chapterRows.length > 0 && (
+=======
+        {chapterLoading ? (
+          <div className="comic-releases comic-releases-loading">
+            <span><strong>—</strong><em>Memuat...</em></span>
+          </div>
+        ) : hasChapters ? (
+>>>>>>> 3e83d39 (some changes on mobile.)
           <div className="comic-releases">
             {chapterRows.map((chapter) => {
               const age = formatUpdateAge(chapter.releaseDate)
@@ -62,7 +94,11 @@ export function ComicCard({ comic, href = `/comic/${comic.id}`, progress, onClic
               )
             })}
           </div>
+<<<<<<< HEAD
         )}
+=======
+        ) : null}
+>>>>>>> 3e83d39 (some changes on mobile.)
         {progress && (
           <strong className="reading-progress">
             Lanjut Ch. {progress.chapterNumber} · Hal. {progress.pageIndex + 1}

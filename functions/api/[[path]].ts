@@ -2,6 +2,10 @@ import { createApiIndex, createOpenApiDocument } from '../../shared/api-document
 
 interface PagesContext {
   request: Request
+<<<<<<< HEAD
+=======
+  env: Record<string, string>
+>>>>>>> 3e83d39 (some changes on mobile.)
   waitUntil(promise: Promise<unknown>): void
 }
 
@@ -10,6 +14,10 @@ const IMAGE_HOSTS = new Set(['assets.shngm.id', 'images.shngm.id'])
 const APP_ORIGINS = new Set(['https://komikaid.pages.dev', 'https://app.komikaid.pages.dev'])
 const MAX_IMAGE_BYTES = 25 * 1024 * 1024
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> 3e83d39 (some changes on mobile.)
 function withCors(response: Response, request: Request): Response {
   const requestUrl = new URL(request.url)
   const requestedMethod = request.method === 'OPTIONS'
@@ -87,7 +95,80 @@ async function proxyImage(request: Request, waitUntil: PagesContext['waitUntil']
   return response
 }
 
+<<<<<<< HEAD
 export async function onRequest({ request, waitUntil }: PagesContext): Promise<Response> {
+=======
+async function githubFetch(path: string, env: PagesContext['env']) {
+  const headers = new Headers({
+    Accept: 'application/vnd.github+json',
+    'User-Agent': 'KomikaID-Updater',
+    'X-GitHub-Api-Version': '2022-11-28',
+  })
+  const token = (env as Record<string, string>)['GITHUB_TOKEN']
+  if (token) headers.set('Authorization', `Bearer ${token}`)
+  return fetch(`https://api.github.com/repos/WyvernCW/komikaid${path}`, { headers, signal: AbortSignal.timeout(10_000) })
+}
+
+async function handleAppUpdateReleases(request: Request, env: PagesContext['env']): Promise<Response> {
+  const response = await githubFetch('/releases?per_page=20', env)
+  if (!response.ok) {
+    return Response.json({ error: { code: 'UPSTREAM_ERROR', detail: await response.text() } }, { status: 502 })
+  }
+
+  const raw = await response.json() as Array<Record<string, unknown>>
+  const releases = raw.filter((r) => !r.draft && !r.prerelease).map((r) => ({
+    version: String(r.tag_name ?? '').replace(/^v/i, ''),
+    tag: r.tag_name,
+    title: (r.name as string) || (r.tag_name as string),
+    changelog: ((r.body as string) || 'Pembaruan dan perbaikan terbaru untuk KomikaID.').trim(),
+    publishedAt: r.published_at,
+  }))
+
+  return Response.json({ releases }, {
+    headers: { 'Cache-Control': 'public, max-age=120, s-maxage=600, stale-while-revalidate=1800' },
+  })
+}
+
+async function handleAppUpdateLatest(request: Request, env: PagesContext['env']): Promise<Response> {
+  const response = await githubFetch('/releases/latest', env)
+  if (!response.ok) {
+    return Response.json({ error: { code: 'UPSTREAM_ERROR', detail: await response.text() } }, { status: 502 })
+  }
+
+  const release = await response.json() as Record<string, unknown>
+  if (release.draft || release.prerelease) {
+    return Response.json({ error: { code: 'NO_STABLE_RELEASE' } }, { status: 404 })
+  }
+
+  const assets = (release.assets as Array<Record<string, unknown>>) ?? []
+  const apk = assets.find((a) =>
+    String(a.name).toLowerCase() === 'komikaid.apk'
+    || (String(a.name).toLowerCase().endsWith('.apk') && String(a.content_type).includes('android'))
+  ) ?? assets.find((a) => String(a.name).toLowerCase().endsWith('.apk'))
+
+  if (!apk) {
+    return Response.json({ error: { code: 'APK_NOT_FOUND' } }, { status: 404 })
+  }
+
+  const data = {
+    version: String(release.tag_name ?? '').replace(/^v/i, ''),
+    tag: release.tag_name,
+    title: (release.name as string) || (release.tag_name as string),
+    changelog: ((release.body as string) || 'Pembaruan dan perbaikan terbaru untuk KomikaID.').trim(),
+    publishedAt: release.published_at,
+    releaseUrl: release.html_url,
+    downloadUrl: apk.browser_download_url,
+    fileName: apk.name,
+    size: apk.size,
+  }
+
+  return Response.json(data, {
+    headers: { 'Cache-Control': 'public, max-age=60, s-maxage=300, stale-while-revalidate=900' },
+  })
+}
+
+export async function onRequest({ request, waitUntil, env }: PagesContext): Promise<Response> {
+>>>>>>> 3e83d39 (some changes on mobile.)
   const incomingUrl = new URL(request.url)
   if (request.method === 'GET' && /^\/api\/?$/.test(incomingUrl.pathname)) {
     return withCors(Response.json(createApiIndex(incomingUrl.origin), {
@@ -113,6 +194,16 @@ export async function onRequest({ request, waitUntil }: PagesContext): Promise<R
     return withCors(await proxyImage(request, waitUntil), request)
   }
 
+<<<<<<< HEAD
+=======
+  if (request.method === 'GET' && incomingUrl.pathname === '/api/app-update/releases') {
+    return withCors(await handleAppUpdateReleases(request, env), request)
+  }
+  if (request.method === 'GET' && incomingUrl.pathname === '/api/app-update/latest') {
+    return withCors(await handleAppUpdateLatest(request, env), request)
+  }
+
+>>>>>>> 3e83d39 (some changes on mobile.)
   const upstreamUrl = new URL(`${incomingUrl.pathname}${incomingUrl.search}`, API_ORIGIN)
   const isPublicGet = request.method === 'GET' && !incomingUrl.pathname.startsWith('/api/sync')
   const cache = caches.default

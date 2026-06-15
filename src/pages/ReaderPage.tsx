@@ -7,15 +7,24 @@ import {
   useRef,
   useState,
 } from 'react'
+<<<<<<< HEAD
 import { Link, useParams, useSearchParams } from 'react-router-dom'
+=======
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
+>>>>>>> 3e83d39 (some changes on mobile.)
 import { api } from '../lib/api'
 import { downloadManager } from '../lib/download-manager'
 import { filterChapters } from '../lib/catalog-utils'
 import {
   areReaderControlsVisible,
+<<<<<<< HEAD
   isReaderDoublePress,
   toggleReaderControls,
   type TapPoint,
+=======
+  isReaderHorizontalSwipe,
+  toggleReaderControls,
+>>>>>>> 3e83d39 (some changes on mobile.)
 } from '../lib/reader-controls'
 import { library } from '../lib/store'
 import { useUiStore } from '../lib/ui-store'
@@ -43,11 +52,18 @@ export function ReaderPage() {
     queryFn: () => api.comic(comicId),
     enabled: Boolean(comicId),
   })
+<<<<<<< HEAD
+=======
+  const navigate = useNavigate()
+>>>>>>> 3e83d39 (some changes on mobile.)
   const observer = useRef<IntersectionObserver | null>(null)
   const controlsElement = useRef<HTMLElement | null>(null)
   const currentChapterOption = useRef<HTMLAnchorElement | null>(null)
   const pointerStart = useRef<{ x: number; y: number } | null>(null)
+<<<<<<< HEAD
   const lastPress = useRef<TapPoint | null>(null)
+=======
+>>>>>>> 3e83d39 (some changes on mobile.)
   const [controls, setControls] = useState({ chapterId, visible: false })
   const [picker, setPicker] = useState({ chapterId, open: false })
   const [chapterSearch, setChapterSearch] = useState('')
@@ -178,6 +194,7 @@ export function ReaderPage() {
   }
 
   const handlePointerUp = (event: ReactPointerEvent<HTMLDivElement>) => {
+<<<<<<< HEAD
     if (!pointerStart.current) return
     const travel = Math.hypot(
       event.clientX - pointerStart.current.x,
@@ -195,6 +212,25 @@ export function ReaderPage() {
       return
     }
     lastPress.current = current
+=======
+    const start = pointerStart.current
+    if (!start) return
+    pointerStart.current = null
+
+    const end = { x: event.clientX, y: event.clientY }
+    const swipe = isReaderHorizontalSwipe(start, end)
+    if (swipe === 'next' && chapter.data?.nextChapterId) {
+      navigate(`/reader/${chapter.data.nextChapterId}?comic=${comicId}`)
+      return
+    }
+    if (swipe === 'prev' && chapter.data?.previousChapterId) {
+      navigate(`/reader/${chapter.data.previousChapterId}?comic=${comicId}`)
+      return
+    }
+
+    const travel = Math.hypot(end.x - start.x, end.y - start.y)
+    if (travel < 28) toggleControls()
+>>>>>>> 3e83d39 (some changes on mobile.)
   }
 
   if (!chapter.data) return <div className="reader-loading">Menyiapkan halaman...</div>

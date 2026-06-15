@@ -2,6 +2,10 @@ import { App as CapacitorApp } from '@capacitor/app'
 import { Network } from '@capacitor/network'
 import { lazy, Suspense, useEffect } from 'react'
 import { Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom'
+<<<<<<< HEAD
+=======
+import { ErrorBoundary } from './components/ErrorBoundary'
+>>>>>>> 3e83d39 (some changes on mobile.)
 import { Shell } from './components/Shell'
 import { ScrollRestoration } from './components/ScrollRestoration'
 import { StartupSkeleton } from './components/States'
@@ -81,6 +85,7 @@ export default function App() {
 
   return <Suspense fallback={<StartupSkeleton />}><ScrollRestoration /><Routes>
       <Route element={<Shell />}>
+<<<<<<< HEAD
         <Route index element={<HomePage />} />
         <Route path="search" element={<SearchPage />} />
         <Route path="library" element={<LibraryPage />} />
@@ -91,6 +96,18 @@ export default function App() {
       </Route>
       <Route path="sso-callback" element={<SsoCallbackPage />} />
       <Route path="reader/:chapterId" element={<ReaderPage />} />
+=======
+        <Route index element={<ErrorBoundary name="Home"><HomePage /></ErrorBoundary>} />
+        <Route path="search" element={<ErrorBoundary name="Search"><SearchPage /></ErrorBoundary>} />
+        <Route path="library" element={<ErrorBoundary name="Library"><LibraryPage /></ErrorBoundary>} />
+        <Route path="downloads" element={<ErrorBoundary name="Downloads"><DownloadsPage /></ErrorBoundary>} />
+        <Route path="profile" element={<ErrorBoundary name="Profile"><ProfilePage /></ErrorBoundary>} />
+        <Route path="inbox" element={<ErrorBoundary name="Inbox"><InboxPage /></ErrorBoundary>} />
+        <Route path="comic/:comicId" element={<ErrorBoundary name="Comic"><ComicPage /></ErrorBoundary>} />
+      </Route>
+      <Route path="sso-callback" element={<ErrorBoundary name="SSO"><SsoCallbackPage /></ErrorBoundary>} />
+      <Route path="reader/:chapterId" element={<ErrorBoundary name="Reader"><ReaderPage /></ErrorBoundary>} />
+>>>>>>> 3e83d39 (some changes on mobile.)
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes></Suspense>
 }

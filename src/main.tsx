@@ -5,6 +5,10 @@ import { BrowserRouter } from 'react-router-dom'
 import App from './App'
 import './index.css'
 import AccountServices from './components/AccountServices'
+<<<<<<< HEAD
+=======
+import InboxServices from './components/InboxServices'
+>>>>>>> 3e83d39 (some changes on mobile.)
 import UpdateServices from './components/UpdateServices'
 import { ClerkBoundary } from './components/ClerkBoundary'
 import { ApiError } from './lib/api'
@@ -32,6 +36,10 @@ createRoot(document.getElementById('root')!).render(
         <ClerkBoundary>
           <App />
           <AccountServices />
+<<<<<<< HEAD
+=======
+          <InboxServices />
+>>>>>>> 3e83d39 (some changes on mobile.)
           <UpdateServices />
         </ClerkBoundary>
       </BrowserRouter>

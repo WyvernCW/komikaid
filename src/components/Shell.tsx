@@ -1,6 +1,19 @@
 import { Bell, BookOpen, Download, Home, RefreshCw, Search, UserRound } from 'lucide-react'
 import { NavLink, Outlet } from 'react-router-dom'
 import { useUiStore } from '../lib/ui-store'
+<<<<<<< HEAD
+=======
+import { useEffect } from 'react'
+
+const preloadAll = () => {
+  void import('../pages/SearchPage')
+  void import('../pages/LibraryPage')
+  void import('../pages/DownloadsPage')
+  void import('../pages/ProfilePage')
+  void import('../pages/InboxPage')
+  void import('../pages/ComicPage')
+}
+>>>>>>> 3e83d39 (some changes on mobile.)
 
 const nav = [
   { to: '/', label: 'Beranda', icon: Home, preload: () => Promise.resolve() },
@@ -14,6 +27,14 @@ export function Shell() {
   const online = useUiStore((state) => state.online)
   const update = useUiStore((state) => state.availableUpdate)
   const setUpdateDialogOpen = useUiStore((state) => state.setUpdateDialogOpen)
+<<<<<<< HEAD
+=======
+  useEffect(() => {
+    const idle = (window as Window & { requestIdleCallback?: Function }).requestIdleCallback
+    if (idle) idle(() => preloadAll(), { timeout: 500 })
+    else setTimeout(preloadAll, 200)
+  }, [])
+>>>>>>> 3e83d39 (some changes on mobile.)
   return (
     <div className="app-shell">
       <header className="topbar">
